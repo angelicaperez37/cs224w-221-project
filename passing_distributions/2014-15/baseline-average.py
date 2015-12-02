@@ -15,6 +15,7 @@ def getTeamNameFromFile(network):
 
 # allGroupPasses[team][p1-p2] = totalPasses
 allGroupPasses = defaultdict(lambda: defaultdict(int))
+totalPassesPerTeam = defaultdict(int)
 
 matchdays = ["matchday" + str(i) for i in xrange(1, 7)]
 for matchday in matchdays:
@@ -29,9 +30,10 @@ for matchday in matchdays:
                 p1, p2, weight = line
                 p_key = p1 + "-" + p2
                 allGroupPasses[teamName][p_key] += int(weight)
-                # print "%s, %s, %s" % (teamName, p_key, weight)
+                totalPassesPerTeam[teamName] += int(weight)
+                print "%s, %s, %s" % (teamName, p_key, weight)
 
-# normalize over 6 matchdays
+# take average over 6 matchdays
 for teamName in allGroupPasses:
     for p_key in allGroupPasses[teamName]:
         allGroupPasses[teamName][p_key] /= 6
@@ -64,9 +66,9 @@ for network in os.listdir(rpath):
             if p_key in allGroupPasses[teamName]:
                 # evaluate
                 est = allGroupPasses[teamName][p_key]
-                scorePerTeam[teamName] += int(weight) - est
+                scorePerTeam[teamName] += abs(int(weight) - est)
             totalPasses += 1
-        # normalize by total passes
+        # average over passes betwen players
         scorePerTeam[teamName] /= totalPasses
 
 avgScorePerTeam = defaultdict(float)
@@ -104,3 +106,4 @@ sumScore = sum([avgScorePerTeam[team] for team in avgScorePerTeam])
 sumScore /= 16
 print ""
 print "Average Score Overall: %.4f" % sumScore
+print "Score indicates the average error over all passes between players for a team."
