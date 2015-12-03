@@ -19,10 +19,11 @@ def getTeamNameFromFile(network):
 
 # allGroupPasses[team][p1-p2] = totalPasses
 allGroupPasses = defaultdict(lambda: defaultdict(int))
+folder = "passing_distributions/2014-15/"
 
 matchdays = ["matchday" + str(i) for i in xrange(1, 7)]
 for matchday in matchdays:
-    path = matchday + "/networks/"
+    path = folder + matchday + "/networks/"
     for network in os.listdir(path):
         if re.search("-edges", network):
             edgeFile = open(path + network, "r")

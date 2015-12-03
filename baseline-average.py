@@ -16,10 +16,11 @@ def getTeamNameFromFile(network):
 # allGroupPasses[team][p1-p2] = totalPasses
 allGroupPasses = defaultdict(lambda: defaultdict(int))
 totalPassesPerTeam = defaultdict(int)
+folder = "passing_distributions/2014-15/"
 
 matchdays = ["matchday" + str(i) for i in xrange(1, 7)]
 for matchday in matchdays:
-    path = matchday + "/networks/"
+    path = folder + matchday + "/networks/"
     for network in os.listdir(path):
         if re.search("-edges", network):
             edgeFile = open(path + network, "r")
@@ -49,10 +50,10 @@ r16Teams = []
 scorePerTeam1 = defaultdict(float)
 scorePerTeam2 = defaultdict(float)
 
-for network in os.listdir(rpath):
+for network in os.listdir(folder + rpath):
     if re.search("-edges", network):
         totalPasses = 0
-        edgeFile = open(rpath + network, "r")
+        edgeFile = open(folder + rpath + network, "r")
         teamName = getTeamNameFromFile(network)
         scorePerTeam = scorePerTeam1
         if teamName in r16Teams:

@@ -7,203 +7,231 @@ import re
 from collections import defaultdict
 import unicodedata
 
+class PredictPD():
 
-#----------------------Store all player and team data-------------------#
-# list of all players as Players
-allPlayers = {}
+	def __init__(self):
+		# TODO: establish features, weights
+		countSpecFile = "spec_passes_count.txt"
+		countSpecificPassesFeature = classes.countSpecificPassesFeature(countSpecFile)
+		self.features = {"count-specific-passes": countSpecificPassesFeature}
+		self.weights = [0]
 
-# for positions, only last names are included along with price, team, and position
-lines = [line.rstrip('\n') for line in open('fantasy_player_data/positions/defenders')]
-lines += [line.rstrip('\n') for line in open('fantasy_player_data/positions/forwards')]
-lines += [line.rstrip('\n') for line in open('fantasy_player_data/positions/goalkeepers')]
-lines += [line.rstrip('\n') for line in open('fantasy_player_data/positions/midfielders')]
+	# Average pairwise error over all players in a team
+	# given prediction and gold
+	def evaluate(self):
+		raise NotImplementedError("Implement me")
 
-# compare ignoring accented characters
-def check_for_accented_key(k, d):
-	for key in d:
-		u1 = unicodedata.normalize('NFC', k.decode('utf-8'))
-		u2 = unicodedata.normalize('NFC', key.decode('utf-8'))
-		if u1 == u2:
-			return d[key]
-	raise "Couldn't find team name"
+	# Training
+	# 	have features calculate numbers based on data
+	# 	learn weights for features via supervised data (group stage games) and SGD/EM
+	def train(self):
+		# TOOD: for some number of iterations
+		# iterate over matchdays, predicting passes, performing SGD, etc.
 
-# team_to_player_num[team][player_last_name] = player_num
-team_to_player_num = defaultdict(lambda: defaultdict(str))
+		raise NotImplementedError("Implement me")
 
-# team_to_player_name[team][player_num] = player_name
-team_to_player_name = defaultdict(lambda: defaultdict(str))
-# all_player_list includes first and last names for players, player numbers, and teams
-all_player_lines = [line.rstrip() for line in open("fantasy_player_data/all_players/all_player_list", 'r')]
+	# Testing
+	#	Predict, then compare with dev/test set
+	def test(self):
+		raise NotImplementedError("Implement me")
 
-for line in all_player_lines[1:]:
-	num, name, team = line.rstrip().split(",")
+# #----------------------Store all player and team data-------------------#
+# # list of all players as Players
+# allPlayers = {}
 
-	# get rid of trailing whitespace
-	name = re.sub("\s*$", "", name)
-	if " " in name:
-		last_name = (re.match(".* (.*)$", name)).group(1)
-	else: last_name = name
+# # for positions, only last names are included along with price, team, and position
+# # TODO: update this with new squad list for 2014-15
+# lines = [line.rstrip('\n') for line in open('fantasy_player_data/positions/defenders')]
+# lines += [line.rstrip('\n') for line in open('fantasy_player_data/positions/forwards')]
+# lines += [line.rstrip('\n') for line in open('fantasy_player_data/positions/goalkeepers')]
+# lines += [line.rstrip('\n') for line in open('fantasy_player_data/positions/midfielders')]
 
-	team_to_player_num[team][last_name] = num
-	team_to_player_name[team][num] = name
+# # compare ignoring accented characters
+# def check_for_accented_key(k, d):
+# 	for key in d:
+# 		u1 = unicodedata.normalize('NFC', k.decode('utf-8'))
+# 		u2 = unicodedata.normalize('NFC', key.decode('utf-8'))
+# 		if u1 == u2:
+# 			return d[key]
+# 	raise "Couldn't find team name"
 
-# team name as String -> Team object
-allTeams = {}
+# # team_to_player_num[team][player_last_name] = player_num
+# team_to_player_num = defaultdict(lambda: defaultdict(str))
 
-# store basic player data
-# add players to their corresponding Teams
-for line in lines:
-	last_name, team, position, price = line.rstrip().split(", ")
-	price = float(price)
-	team_dict = check_for_accented_key(team, team_to_player_num);
+# # team_to_player_name[team][player_num] = player_name
+# team_to_player_name = defaultdict(lambda: defaultdict(str))
+# # all_player_list includes first and last names for players, player numbers, and teams
+# all_player_lines = [line.rstrip() for line in open("fantasy_player_data/all_players/all_player_list", 'r')]
 
-	num = team_dict[last_name]
-	p = classes.Player(last_name, num, team, position, price)
+# for line in all_player_lines[1:]:
+# 	num, name, team = line.rstrip().split(",")
 
-	# store player_name-player_num-player_team = Player object
-	key = last_name + "-" + num + "-" + team
-	allPlayers[key] = p
+# 	# get rid of trailing whitespace
+# 	name = re.sub("\s*$", "", name)
+# 	if " " in name:
+# 		last_name = (re.match(".* (.*)$", name)).group(1)
+# 	else: last_name = name
 
-	if team not in allTeams:
-		allTeams[team] = classes.Team(team, [])
+# 	team_to_player_num[team][last_name] = num
+# 	team_to_player_name[team][num] = name
 
-	allTeams[team].addPlayer(p)
+# # team name as String -> Team object
+# allTeams = {}
 
-print allTeams.keys()
+# # store basic player data
+# # add players to their corresponding Teams
+# for line in lines:
+# 	last_name, team, position, price = line.rstrip().split(", ")
+# 	price = float(price)
+# 	team_dict = check_for_accented_key(team, team_to_player_num);
 
-#------------------END storing of all player and team data-------------------#
+# 	num = team_dict[last_name]
+# 	p = classes.Player(last_name, num, team, position, price)
 
-def findPlayerPosition(name, team):
-	teamObj = allTeams[team]
-	splitName = name.split(" ")
-	lastName = splitName[len(splitName)-1]
+# 	# store player_name-player_num-player_team = Player object
+# 	key = last_name + "-" + num + "-" + team
+# 	allPlayers[key] = p
 
-	for player in teamObj.players:
-		if player.name == lastName:
-			return player.position
+# 	if team not in allTeams:
+# 		allTeams[team] = classes.Team(team, [])
 
-	return "MID"  #returns "MID" when player not found in team
-				#occurs only for a few players
+# 	allTeams[team].addPlayer(p)
 
-#store team rankings, teamName:ranking
-rankings = {}
-for line in [x.rstrip('\n') for x in open("rankings.txt")]:
-	sl = line.split('\t')
-	rankings[sl[0]] = sl[1]
+# print allTeams.keys()
 
-#matchID:classes.Match
-matches = {}
+# #------------------END storing of all player and team data-------------------#
 
-#store matches with teams and players (just nodes files)
-for matchday in os.listdir("passing_distributions/2015-16/"):
-	if matchday.endswith("sh") or matchday.endswith("py") or matchday.endswith("md") or matchday.endswith("Store"):
-		continue
-	folder = "passing_distributions/2015-16/"+matchday+"/networks/"
-	for nodes_file in os.listdir(folder):
-		if nodes_file.endswith("nodes"):
-			matchID = re.search('(.+?)_tpd', nodes_file).group(1)
-			team = re.sub("_", " ", re.search('tpd-(.+?)-nodes', nodes_file).group(1))
+# def findPlayerPosition(name, team):
+# 	teamObj = allTeams[team]
+# 	splitName = name.split(" ")
+# 	lastName = splitName[len(splitName)-1]
 
-			#these two team names were showing up differently in objects
-			if "Zenit" in team:
-				team = "FC Zenit"
-			elif "Maccabi" in team:
-				team = "Maccabi Tel-Aviv FC"
+# 	for player in teamObj.players:
+# 		if player.name == lastName:
+# 			return player.position
 
-			teamObj = classes.Team(team, [])
-			for line in [x.rstrip('\n') for x in open(folder+nodes_file)]:
-				elems = line.split('\t')
-				playerName = re.sub("\s*$", "", elems[1])
-				position = findPlayerPosition(playerName, team)
-				player = classes.Player(playerName, elems[0], team, position, 0)
-				teamObj.addPlayer(player)
+# 	return "MID"  #returns "MID" when player not found in team
+# 				#occurs only for a few players
 
-			if matchID not in matches.keys():
-				match = classes.Match(team, "")
-				match.setHomeTeamObj(teamObj)
-				matches[matchID] = match
-			else:
-				match = matches[matchID]
-				match.setVisitingTeam(team)
-				match.setVisitingTeamObj(teamObj)
+# #store team rankings, teamName:ranking
+# rankings = {}
+# for line in [x.rstrip('\n') for x in open("rankings.txt")]:
+# 	sl = line.split('\t')
+# 	rankings[sl[0]] = sl[1]
+
+# #matchID:classes.Match
+# matches = {}
+
+# #store matches with teams and players (just nodes files)
+# for matchday in os.listdir("passing_distributions/2015-16/"):
+# 	if matchday.endswith("sh") or matchday.endswith("py") or matchday.endswith("md") or matchday.endswith("Store"):
+# 		continue
+# 	folder = "passing_distributions/2015-16/"+matchday+"/networks/"
+# 	for nodes_file in os.listdir(folder):
+# 		if nodes_file.endswith("nodes"):
+# 			matchID = re.search('(.+?)_tpd', nodes_file).group(1)
+# 			team = re.sub("_", " ", re.search('tpd-(.+?)-nodes', nodes_file).group(1))
+
+# 			#these two team names were showing up differently in objects
+# 			if "Zenit" in team:
+# 				team = "FC Zenit"
+# 			elif "Maccabi" in team:
+# 				team = "Maccabi Tel-Aviv FC"
+
+# 			teamObj = classes.Team(team, [])
+# 			for line in [x.rstrip('\n') for x in open(folder+nodes_file)]:
+# 				elems = line.split('\t')
+# 				playerName = re.sub("\s*$", "", elems[1])
+# 				position = findPlayerPosition(playerName, team)
+# 				player = classes.Player(playerName, elems[0], team, position, 0)
+# 				teamObj.addPlayer(player)
+
+# 			if matchID not in matches.keys():
+# 				match = classes.Match(team, "")
+# 				match.setHomeTeamObj(teamObj)
+# 				matches[matchID] = match
+# 			else:
+# 				match = matches[matchID]
+# 				match.setVisitingTeam(team)
+# 				match.setVisitingTeamObj(teamObj)
 
 
-#store passing distributions for each match
-for matchday in os.listdir("passing_distributions/2015-16/"):
-	if matchday.endswith("sh") or matchday.endswith("py") or matchday.endswith("md") or matchday.endswith("Store"):
-		continue
-	folder = "passing_distributions/2015-16/"+matchday+"/networks/"
-	for edge_file in os.listdir(folder):
-		if edge_file.endswith("edges"):
-			matchID = re.search('(.+?)_tpd', edge_file).group(1)
-			team = re.sub("_", " ", re.search('tpd-(.+?)-edges', edge_file).group(1))
+# #store passing distributions for each match
+# for matchday in os.listdir("passing_distributions/2015-16/"):
+# 	if matchday.endswith("sh") or matchday.endswith("py") or matchday.endswith("md") or matchday.endswith("Store"):
+# 		continue
+# 	folder = "passing_distributions/2015-16/"+matchday+"/networks/"
+# 	for edge_file in os.listdir(folder):
+# 		if edge_file.endswith("edges"):
+# 			matchID = re.search('(.+?)_tpd', edge_file).group(1)
+# 			team = re.sub("_", " ", re.search('tpd-(.+?)-edges', edge_file).group(1))
 
-			#these two team names were showing up differently in objects
-			if "Zenit" in team:
-				team = "FC Zenit"
-			elif "Maccabi" in team:
-				team = "Maccabi Tel-Aviv FC"
+# 			#these two team names were showing up differently in objects
+# 			if "Zenit" in team:
+# 				team = "FC Zenit"
+# 			elif "Maccabi" in team:
+# 				team = "Maccabi Tel-Aviv FC"
 
-			match = matches[matchID]
-			pd = match.getPD(team)
+# 			match = matches[matchID]
+# 			pd = match.getPD(team)
 
-			for line in [x.rstrip('\n') for x in open(folder+edge_file)]:
-				elems = line.split('\t')
+# 			for line in [x.rstrip('\n') for x in open(folder+edge_file)]:
+# 				elems = line.split('\t')
 				
-				if elems[0] not in pd.keys():
-					pd[elems[0]] = {}
-				pd[elems[0]][elems[1]] = elems[2]
+# 				if elems[0] not in pd.keys():
+# 					pd[elems[0]] = {}
+# 				pd[elems[0]][elems[1]] = elems[2]
 
 
-#store team ranks in matches
-for matchID in matches.keys():
-	match = matches[matchID]
-	match.homeTeamObj.setRank(rankings[match.homeTeam])
-	match.visitingTeamObj.setRank(rankings[match.visitingTeam])
+# #store team ranks in matches
+# for matchID in matches.keys():
+# 	match = matches[matchID]
+# 	match.homeTeamObj.setRank(rankings[match.homeTeam])
+# 	match.visitingTeamObj.setRank(rankings[match.visitingTeam])
 
 
-def computePositionPD(team, pd, players):
-	num_to_pos = {}
-	for player in players:
-		num_to_pos[player.number] = player.position
-	passes_to_pos = collections.Counter()
-	for player in pd.keys():
-		for receiver in pd[player].keys():
-			pos = num_to_pos[receiver]
-			passes_to_pos[pos] += int(pd[player][receiver])
+# def computePositionPD(team, pd, players):
+# 	num_to_pos = {}
+# 	for player in players:
+# 		num_to_pos[player.number] = player.position
+# 	passes_to_pos = collections.Counter()
+# 	for player in pd.keys():
+# 		for receiver in pd[player].keys():
+# 			pos = num_to_pos[receiver]
+# 			passes_to_pos[pos] += int(pd[player][receiver])
 
-	return passes_to_pos
+# 	return passes_to_pos
 
-# compute PD types for each team in each match
-for id in matches.keys():
-	match = matches[id]
-	match.homePosPD = computePositionPD(match.homeTeam, match.homePD, match.homeTeamObj.players)
-	match.visitorPosPD = computePositionPD(match.visitingTeam, match.visitorPD, match.visitingTeamObj.players)
+# # compute PD types for each team in each match
+# for id in matches.keys():
+# 	match = matches[id]
+# 	match.homePosPD = computePositionPD(match.homeTeam, match.homePD, match.homeTeamObj.players)
+# 	match.visitorPosPD = computePositionPD(match.visitingTeam, match.visitorPD, match.visitingTeamObj.players)
 
-	#to do some more analysis
-	print "#################################################"
-	print "MATCH ", id
-	print match.homeTeam, " (#", rankings[match.homeTeam],") vs ", match.visitingTeam, " (#", rankings[match.visitingTeam], ")"
-	print match.homeTeam, "'s position PD: "
-	print match.homePosPD
-	print match.visitingTeam, "'s position PD: "
-	print match.visitorPosPD
-	print "#################################################"
+# 	#to do some more analysis
+# 	print "#################################################"
+# 	print "MATCH ", id
+# 	print match.homeTeam, " (#", rankings[match.homeTeam],") vs ", match.visitingTeam, " (#", rankings[match.visitingTeam], ")"
+# 	print match.homeTeam, "'s position PD: "
+# 	print match.homePosPD
+# 	print match.visitingTeam, "'s position PD: "
+# 	print match.visitorPosPD
+# 	print "#################################################"
 
-#TO CHECK
-'''for id in matches.keys():
-	print id
-	print matches[id].homeTeam
-	print matches[id].getPD(matches[id].homeTeam)
-	print matches[id].visitingTeam
-	print matches[id].getPD(matches[id].visitingTeam)
-'''	
-#	print matches[id].homeTeamObj.players[0].name
-#	print matches[id].visitingTeam
-#	print matches[id].visitingTeamObj.players[0].name
+# #TO CHECK
+# '''for id in matches.keys():
+# 	print id
+# 	print matches[id].homeTeam
+# 	print matches[id].getPD(matches[id].homeTeam)
+# 	print matches[id].visitingTeam
+# 	print matches[id].getPD(matches[id].visitingTeam)
+# '''	
+# #	print matches[id].homeTeamObj.players[0].name
+# #	print matches[id].visitingTeam
+# #	print matches[id].visitingTeamObj.players[0].name
 	
 
-'''m = re.search('AAA(.+?)ZZZ', text)
-if m:
-    found = m.group(1)
-'''
+# '''m = re.search('AAA(.+?)ZZZ', text)
+# if m:
+#     found = m.group(1)
+# '''

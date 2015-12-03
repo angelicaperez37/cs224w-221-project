@@ -1,4 +1,5 @@
 import collections
+from collections import defaultdict
 
 # stores relevant team data
 class Team():
@@ -106,6 +107,16 @@ class Match():
 	def setVisitingTeamObj(self, team):
 		self.visitingTeamObj = team
 
+class CountSpecificPassesFeature():
+	def __init__(self, count_file_name):
+		self.counts = defaultdict(lambda: defaultdict(int))
+		count_file = open(count_file_name, "r")
+		for line in count_file:
+			team, players, weight = line.strip().split(", ")
+			self.counts[team][players] = weight
 
+	def getWeight(team, player1, player2):
+		p_key = player1 + "-" + player2
+		return self.counts[team][p_key]
 
 
