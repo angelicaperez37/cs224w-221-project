@@ -168,6 +168,21 @@ class PlayerPositionFeature():
 		return ret
 		# return self.teamNumPos[teamName][num1] == self.teamNumPos[teamName][num2]
 
+class RankingFeature():
+	def __init__(self, rankFileName):
+		self.rankings = defaultdict(int)
+		rank_file = open(rankFileName, "r")
+		for rank in rank_file:
+			rank, team = rank.rstrip().split(", ")
+			self.rankings[team] = int(rank)
 
+	def getRank(self, team):
+		return self.rankings[team]
+
+	def isHigherInRank(self, team1, team2):
+		return self.getRank(team1) > self.getRank(team2)
+
+	def getDiffInRank(self, team1, team2):
+		return self.getRank(team1) - self.getRank(team2)
 
 

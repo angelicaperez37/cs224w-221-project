@@ -22,7 +22,8 @@ class PredictPD():
 		self.weights["avgPasses"] = 0
 		self.weights["isSamePos"] = 0
 		self.weights["isDiffPos"] = 0
-
+		self.weights["diffInRank"] = 0
+		self.weights["wonAgainstSimTeam"] = 0
 
 		# TODO: can experiment with step size
 		self.stepSize = 0.01
@@ -39,10 +40,19 @@ class PredictPD():
 		playerPosDir = "squads/2014-15/squad_list/"
 		self.playerPosFeature = classes.PlayerPositionFeature(playerPosDir)
 
+		rankFile = "2013_14_rankings.txt"
+		self.rankFeature = classes.RankingFeature(rankFile)
+
+		self.matches = defaultdict(str)
+
 	# Average pairwise error over all players in a team
 	# given prediction and gold
-	def evaluate(self):
-		raise NotImplementedError("Implement me")
+	def evaluate(self, features, weight):
+		score = self.computeScore(features, self.weights)
+		print "score %f vs. actual %f" % (float(score), float(weight))
+		loss = self.computeLoss(features, self.weights, float(weight))
+		print "Loss: %f" % loss
+		return loss
 
 	def computeLoss(self, features, weights, label):
 		return (self.computeScore(features, weights) - label)**2
@@ -66,7 +76,6 @@ class PredictPD():
 	# returns a vector
 	# 2 * (phi(x) dot w - y) * phi(x)
 	def computeGradientLoss(self, features, weights, label):
-		# print "Computing gradient loss"
 		scalar =  2 * self.computeScore(features, weights) - label
 		for f in features:
 			features[f] = float(features[f])
@@ -75,7 +84,6 @@ class PredictPD():
 
 	# use SGD to update weights
 	def updateWeights(self, features, weights, label):
-		# print "Updating weights"
 		grad = self.computeGradientLoss(features, weights, label)
 		for w in self.weights:
 			self.weights[w] -= self.stepSize * grad[w]
@@ -86,15 +94,100 @@ class PredictPD():
 		teamName = re.sub("_", " ", teamName)
 		return teamName
 
-	def featureExtractor(self, teamName, p1, p2):
+	def getMatchIDFromFile(self, network):
+		matchID = re.sub("_.*", "", network)
+		return matchID
+
+	def getOppTeam(self, matchID, teamName):
+		team1, team2 = self.matches[matchID].split("/")
+		if team1 == teamName:
+			return team2
+		else: return team1
+
+	def getMatchday(self, matchID):
+		matchID = int(matchID)
+		if matchID <= 2014322:
+			return 0
+		elif matchID >=2014323 and matchID <= 2014338:
+			return 1
+		elif matchID >= 2014339 and matchID <= 2014354:
+			return 2
+		elif matchID > 2014354:
+			return 3
+
+	def featureExtractor(self, teamName, p1, p2, matchID, matchNum):
 		avgPasses = self.countAvgPassesFeature.getCount(teamName, p1, p2)
 		isSamePos = self.playerPosFeature.isSamePos(teamName, p1, p2)
 		isDiffPos = abs(1 - isSamePos)
+
+		oppTeam = self.getOppTeam(matchID, teamName)
+		diffInRank = self.rankFeature.isHigherInRank(teamName, oppTeam)
+
 		features = defaultdict(float)
 		features["avgPasses"] = avgPasses
 		features["isSamePos"] = isSamePos
 		features["isDiffPos"] = isDiffPos
+		features["diffInRank"] = diffInRank
+
+		# for feature: won against a similar ranking team
+		# 1. define history that we are able to use, i.e. previous games
+		matchday = self.getMatchday(matchID)
+		history = self.teamPlayedWith[teamName][:matchday]
+		
+		if len(history) > 0:
+			def computeSim(rank1, rank2):
+				return (rank1**2 + rank2**2)**0.5
+
+			# 2. find most similar opponent in terms of rank
+			# TODO: similarity could be defined better?
+			oppTeamRank = self.rankFeature.getRank(oppTeam)
+			simTeam = ""
+			simTeamDistance = float('inf')
+			rank1 = oppTeamRank
+			for team in history:
+				rank2 = self.rankFeature.getRank(team)
+				sim = computeSim(rank1, rank2)
+				if sim < simTeamDistance:
+					simTeamDistance = sim
+					simTeam = sim
+
+			# 3. find out whether the game was won or lost
+			features["wonAgainstSimTeam"] = self.teamWonAgainst[teamName][matchday]
+
 		return features
+
+	def initMatches(self):
+		for matchday in self.matchdays:
+			path = self.folder + matchday + "/networks/"
+			for network in os.listdir(path):
+				if re.search("-edges", network):
+					edgeFile = open(path + network, "r")
+					teamName = self.getTeamNameFromFile(network)
+					matchID = self.getMatchIDFromFile(network)
+
+					m = self.matches[matchID]
+					if m == "":
+						self.matches[matchID] = teamName
+					else:
+						self.matches[matchID] += "/" + teamName
+
+		allScoresFilename = "matches4_groupStage_2014_15.txt"
+		allScores = open(allScoresFilename, "r")
+		self.matchesWithScores = [line.rstrip() for line in allScores]
+		self.teamPlayedWith = defaultdict(list)
+		self.teamWonAgainst = defaultdict(list)
+
+		# for every team, store opponents in order by matchday
+		for match in self.matchesWithScores:
+			team1, score1, score2, team2 = match.split(", ")
+			team1Won = 0
+			if score1 > score2:
+				team1Won = 1
+
+			self.teamPlayedWith[team1].append(team2)
+			self.teamPlayedWith[team2].append(team1)
+			self.teamWonAgainst[team1].append(team1Won)
+			self.teamWonAgainst[team2].append(abs(1 - team1Won))
 
 	# Training
 	# 	have features calculate numbers based on data
@@ -103,11 +196,13 @@ class PredictPD():
 		# iterate over matchdays, predicting passes, performing SGD, etc.
 
 		num_iter = 2
+		self.initMatches()
 
 		for i in xrange(num_iter):
 			print "Iteration %s" % i
 			print "------------"
 			# iterate over matchdays -- hold out on some matchdays
+			matchNum = 0
 			for matchday in self.matchdays[:4]:
 				print "On " + matchday
 				path = self.folder + matchday + "/networks/"
@@ -122,22 +217,22 @@ class PredictPD():
 						# OR: iterate over each possible combination of a player
 						# and predict the number of passes
 						teamName = self.getTeamNameFromFile(network)
+						matchID = self.getMatchIDFromFile(network)
 						print "team: %s" % teamName
 						for players in edgeFile:
 							p1, p2, weight = players.rstrip().split("\t")
 							print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
 
-							features = self.featureExtractor(teamName, p1, p2)
+							features = self.featureExtractor(teamName, p1, p2, matchID, matchNum)
 		
 							for f in features:
 								print "features[%s] = %f" % (f, float(features[f]))
 							for w in self.weights:
 								print "weights[%s] = %f" % (w, float(self.weights[w]))
 
-							score = self.computeScore(features, self.weights)
-							print "score %f vs. actual %f" % (float(score), float(weight))
-							print "Loss: %f" % self.computeLoss(features, self.weights, float(weight))
-							self.updateWeights(features, self.weights, int(weight))
+							self.evaluate(features, weight)
+ 							self.updateWeights(features, self.weights, int(weight))
+ 						matchNum += 1
 
 	# Testing
 	#	Predict, then compare with dev/test set
@@ -151,7 +246,7 @@ class PredictPD():
 		print "-------"
 		avgLoss = 0
 		totalEx = 0
-
+		matchNum = 0
 		for matchday in self.matchdays[4:]:
 			print "On " + matchday
 			path = self.folder + matchday + "/networks/"
@@ -161,24 +256,23 @@ class PredictPD():
 					edgeFile = open(path + network, "r")
 
 					teamName = self.getTeamNameFromFile(network)
+					matchID = self.getMatchIDFromFile(network)
 					print "team: %s" % teamName
 					for players in edgeFile:
 						p1, p2, weight = players.rstrip().split("\t")
 						print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
 
-						features = self.featureExtractor(teamName, p1, p2)
+						features = self.featureExtractor(teamName, p1, p2, matchID, matchNum)
 	
 						for f in features:
 							print "features[%s] = %f" % (f, float(features[f]))
 						for w in self.weights:
 							print "weights[%s] = %f" % (w, float(self.weights[w]))
 
-						score = self.computeScore(features, self.weights)
-						print "score %f vs. actual %f" % (float(score), float(weight))
-						loss = self.computeLoss(features, self.weights, float(weight))
-						print "Loss: %f" % loss
+						loss = self.evaluate(features, weight)
 						avgLoss += loss
 						totalEx += 1
+					matchNum += 1
 		print "Average loss: %f" % (avgLoss / totalEx)
 
 pred = PredictPD()
@@ -283,8 +377,8 @@ pred.test()
 # 			team = re.sub("_", " ", re.search('tpd-(.+?)-nodes', nodes_file).group(1))
 
 # 			#these two team names were showing up differently in objects
-# 			if "Zenit" in team:
-# 				team = "FC Zenit"
+# 			if "FC Zenit" in team:
+# 				team = "FC FC Zenit"
 # 			elif "Maccabi" in team:
 # 				team = "Maccabi Tel-Aviv FC"
 
@@ -317,8 +411,8 @@ pred.test()
 # 			team = re.sub("_", " ", re.search('tpd-(.+?)-edges', edge_file).group(1))
 
 # 			#these two team names were showing up differently in objects
-# 			if "Zenit" in team:
-# 				team = "FC Zenit"
+# 			if "FC Zenit" in team:
+# 				team = "FC FC Zenit"
 # 			elif "Maccabi" in team:
 # 				team = "Maccabi Tel-Aviv FC"
 
