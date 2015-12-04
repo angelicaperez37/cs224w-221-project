@@ -15,33 +15,43 @@ class PredictPD():
 		# Feature: Specific pass count per match
 		# This is kind of weird because it's like rote memorization
 		# TODO: think more about this
-		countSpecFile = "spec_passes_count.txt"
-		countSpecificPassesFeature = classes.countSpecificPassesFeature(countSpecFile)
+		# countSpecFile = "spec_passes_count.txt"
+		# countSpecificPassesFeature = classes.countSpecificPassesFeature(countSpecFile)
+	
+		self.weights = defaultdict(int)
+		self.weights["avgPasses"] = 0
+		self.weights["isSamePos"] = 0
+		self.weights["isDiffPos"] = 0
 
-		# Feature: Average pass count over group stage
-		countAvgFile = "avg_passes_count.txt"
-		countAvgPassesFeature = classes.countAvgPassesFeature(countAvgFile)
-		self.features = {"count-specific-passes": countSpecificPassesFeature, \
-		"count-avg-passes": countAvgPassesFeature}
-
-		self.weights = [0, 0]
 
 		# TODO: can experiment with step size
 		self.stepSize = 0.01
 
+		# hold out some matchdays
 		self.matchdays = ["matchday" + str(i) for i in xrange(1, 7)]
+
 		self.folder = "passing_distributions/2014-15/"
+
+		# Feature: Average pass count over group stage
+		countAvgFile = "avg_passes_count.txt"
+		self.countAvgPassesFeature = classes.CountAvgPassesFeature(countAvgFile)
+
+		playerPosDir = "squads/2014-15/squad_list/"
+		self.playerPosFeature = classes.PlayerPositionFeature(playerPosDir)
 
 	# Average pairwise error over all players in a team
 	# given prediction and gold
 	def evaluate(self):
 		raise NotImplementedError("Implement me")
 
+	def computeLoss(self, features, weights, label):
+		return (self.computeScore(features, weights) - label)**2
+
 	# score is dot product of features & weights
-	def computeScore(features, weights):
-		score = 0
+	def computeScore(self, features, weights):
+		score = 0.0
 		for v in features:
-			score += features[v] * weights[v]
+			score += float(features[v]) * float(weights[v])
 		return score
 
 	# predict +1 if > 0, -1 otherwise
@@ -55,17 +65,36 @@ class PredictPD():
 
 	# returns a vector
 	# 2 * (phi(x) dot w - y) * phi(x)
-	def computeGradientLoss(features, weights, label):
-		scalar =  2 * computeScore(features, weights) 
+	def computeGradientLoss(self, features, weights, label):
+		# print "Computing gradient loss"
+		scalar =  2 * self.computeScore(features, weights) - label
 		for f in features:
+			features[f] = float(features[f])
 			features[f] *= scalar
 		return features
 
 	# use SGD to update weights
-	def updateWeights(features, weights, label):
-		grad = computeGradientLoss(features, weights, label)
+	def updateWeights(self, features, weights, label):
+		# print "Updating weights"
+		grad = self.computeGradientLoss(features, weights, label)
 		for w in self.weights:
-			self.weights[w] -= grad[w]
+			self.weights[w] -= self.stepSize * grad[w]
+
+	def getTeamNameFromFile(self, network):
+		teamName = re.sub("[^-]*-", "", network, count=1)
+		teamName = re.sub("-edges", "", teamName)
+		teamName = re.sub("_", " ", teamName)
+		return teamName
+
+	def featureExtractor(self, teamName, p1, p2):
+		avgPasses = self.countAvgPassesFeature.getCount(teamName, p1, p2)
+		isSamePos = self.playerPosFeature.isSamePos(teamName, p1, p2)
+		isDiffPos = abs(1 - isSamePos)
+		features = defaultdict(float)
+		features["avgPasses"] = avgPasses
+		features["isSamePos"] = isSamePos
+		features["isDiffPos"] = isDiffPos
+		return features
 
 	# Training
 	# 	have features calculate numbers based on data
@@ -73,10 +102,14 @@ class PredictPD():
 	def train(self):
 		# iterate over matchdays, predicting passes, performing SGD, etc.
 
-		num_iter = 1
+		num_iter = 2
+
 		for i in xrange(num_iter):
-			# iterate over matchday
-			for matchday in self.matchdays:
+			print "Iteration %s" % i
+			print "------------"
+			# iterate over matchdays -- hold out on some matchdays
+			for matchday in self.matchdays[:4]:
+				print "On " + matchday
 				path = self.folder + matchday + "/networks/"
 				# iterate over games
 				for network in os.listdir(path):
@@ -88,15 +121,69 @@ class PredictPD():
 						# update for each player?
 						# OR: iterate over each possible combination of a player
 						# and predict the number of passes
+						teamName = self.getTeamNameFromFile(network)
+						print "team: %s" % teamName
+						for players in edgeFile:
+							p1, p2, weight = players.rstrip().split("\t")
+							print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
 
+							features = self.featureExtractor(teamName, p1, p2)
+		
+							for f in features:
+								print "features[%s] = %f" % (f, float(features[f]))
+							for w in self.weights:
+								print "weights[%s] = %f" % (w, float(self.weights[w]))
 
-
-		raise NotImplementedError("Implement me")
+							score = self.computeScore(features, self.weights)
+							print "score %f vs. actual %f" % (float(score), float(weight))
+							print "Loss: %f" % self.computeLoss(features, self.weights, float(weight))
+							self.updateWeights(features, self.weights, int(weight))
 
 	# Testing
 	#	Predict, then compare with dev/test set
 	def test(self):
-		raise NotImplementedError("Implement me")
+
+		# dev 
+		# too hard to guess continuous values exactly
+		# sum up average error
+
+		print "Testing"
+		print "-------"
+		avgLoss = 0
+		totalEx = 0
+
+		for matchday in self.matchdays[4:]:
+			print "On " + matchday
+			path = self.folder + matchday + "/networks/"
+			# iterate over games
+			for network in os.listdir(path):
+				if re.search("-edges", network):
+					edgeFile = open(path + network, "r")
+
+					teamName = self.getTeamNameFromFile(network)
+					print "team: %s" % teamName
+					for players in edgeFile:
+						p1, p2, weight = players.rstrip().split("\t")
+						print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
+
+						features = self.featureExtractor(teamName, p1, p2)
+	
+						for f in features:
+							print "features[%s] = %f" % (f, float(features[f]))
+						for w in self.weights:
+							print "weights[%s] = %f" % (w, float(self.weights[w]))
+
+						score = self.computeScore(features, self.weights)
+						print "score %f vs. actual %f" % (float(score), float(weight))
+						loss = self.computeLoss(features, self.weights, float(weight))
+						print "Loss: %f" % loss
+						avgLoss += loss
+						totalEx += 1
+		print "Average loss: %f" % (avgLoss / totalEx)
+
+pred = PredictPD()
+pred.train()
+pred.test()
 
 # #----------------------Store all player and team data-------------------#
 # # list of all players as Players
