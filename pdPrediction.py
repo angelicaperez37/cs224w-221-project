@@ -10,23 +10,86 @@ import unicodedata
 class PredictPD():
 
 	def __init__(self):
-		# TODO: establish features, weights
+		# TODO: add more features, weights
+
+		# Feature: Specific pass count per match
+		# This is kind of weird because it's like rote memorization
+		# TODO: think more about this
 		countSpecFile = "spec_passes_count.txt"
 		countSpecificPassesFeature = classes.countSpecificPassesFeature(countSpecFile)
-		self.features = {"count-specific-passes": countSpecificPassesFeature}
-		self.weights = [0]
+
+		# Feature: Average pass count over group stage
+		countAvgFile = "avg_passes_count.txt"
+		countAvgPassesFeature = classes.countAvgPassesFeature(countAvgFile)
+		self.features = {"count-specific-passes": countSpecificPassesFeature, \
+		"count-avg-passes": countAvgPassesFeature}
+
+		self.weights = [0, 0]
+
+		# TODO: can experiment with step size
+		self.stepSize = 0.01
+
+		self.matchdays = ["matchday" + str(i) for i in xrange(1, 7)]
+		self.folder = "passing_distributions/2014-15/"
 
 	# Average pairwise error over all players in a team
 	# given prediction and gold
 	def evaluate(self):
 		raise NotImplementedError("Implement me")
 
+	# score is dot product of features & weights
+	def computeScore(features, weights):
+		score = 0
+		for v in features:
+			score += features[v] * weights[v]
+		return score
+
+	# predict +1 if > 0, -1 otherwise
+	# TODO: OR, is score == # passes
+	# def predict(score):
+	# 	if score > 0:
+	# 		return 1
+	# 	else:
+	# 		return -1
+
+
+	# returns a vector
+	# 2 * (phi(x) dot w - y) * phi(x)
+	def computeGradientLoss(features, weights, label):
+		scalar =  2 * computeScore(features, weights) 
+		for f in features:
+			features[f] *= scalar
+		return features
+
+	# use SGD to update weights
+	def updateWeights(features, weights, label):
+		grad = computeGradientLoss(features, weights, label)
+		for w in self.weights:
+			self.weights[w] -= grad[w]
+
 	# Training
 	# 	have features calculate numbers based on data
 	# 	learn weights for features via supervised data (group stage games) and SGD/EM
 	def train(self):
-		# TOOD: for some number of iterations
 		# iterate over matchdays, predicting passes, performing SGD, etc.
+
+		num_iter = 1
+		for i in xrange(num_iter):
+			# iterate over matchday
+			for matchday in self.matchdays:
+				path = self.folder + matchday + "/networks/"
+				# iterate over games
+				for network in os.listdir(path):
+					if re.search("-edges", network):
+						edgeFile = open(path + network, "r")
+						# TODO
+						# iterate over each edge/pass
+						# for each player, guess a number of passes
+						# update for each player?
+						# OR: iterate over each possible combination of a player
+						# and predict the number of passes
+
+
 
 		raise NotImplementedError("Implement me")
 

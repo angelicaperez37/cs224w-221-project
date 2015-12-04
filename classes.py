@@ -115,8 +115,19 @@ class CountSpecificPassesFeature():
 			team, players, weight = line.strip().split(", ")
 			self.counts[team][players] = weight
 
-	def getWeight(team, player1, player2):
+	# TODO: return smoothed count? return smoothed probability?
+	def getCount(team, player1, player2):
 		p_key = player1 + "-" + player2
 		return self.counts[team][p_key]
 
+class CountAveragePassesFeature():
+	def __init__(self, count_file_name):
+		self.avgCounts = defaultdict(lambda)
+		count_file = open(count_file_name, "r")
+		for line in count_file:
+			team, players, weight = line.strip().split(", ")
+			self.avgCounts[team][players] = weight
 
+	def getCount(team, player1, player2):
+		p_key = player1 + "-" + player2
+		return self.counts[team][p_key]
