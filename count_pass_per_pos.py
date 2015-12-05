@@ -69,7 +69,6 @@ for matchday in matchdays:
 			if matchID == lastMatchID:
 				print "MatchID: %s" % matchID
 				print "{0:10}{1:<20}{2:<}".format("Position", lastTeamName, teamName)
-				# for posPair in passesBetweenPos[teamName]:
 				for posPair in allPosCombos:
 					print "{0:10}{1:<20}{2:<}".format(posPair, \
 						passesBetweenPos[lastTeamName][posPair], \
