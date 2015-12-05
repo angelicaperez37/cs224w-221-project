@@ -43,21 +43,21 @@ for teamName in allGroupPasses:
 avgLoss = 0
 totalEx = 0
 
-for matchday in matchdays[4:]:
-    path = folder + matchday + "/networks/"
-    for network in os.listdir(path):
-        if re.search("-edges", network):
-            edgeFile = open(path + network, "r")
-            teamName = getTeamNameFromFile(network)
+matchday = "r-16"
+path = folder + matchday + "/networks/"
+for network in os.listdir(path):
+    if re.search("-edges", network):
+        edgeFile = open(path + network, "r")
+        teamName = getTeamNameFromFile(network)
 
-            for line in edgeFile:
-                line = line.rstrip().split("\t")
-                p1, p2, weight = line
-                p_key = p1 + "-" + p2
-                avgPasses = allGroupPasses[teamName][p_key]
-                loss = (avgPasses - int(weight)) ** 2
-                avgLoss += loss
-                totalEx += 1
+        for line in edgeFile:
+            line = line.rstrip().split("\t")
+            p1, p2, weight = line
+            p_key = p1 + "-" + p2
+            avgPasses = allGroupPasses[teamName][p_key]
+            loss = (avgPasses - int(weight)) ** 2
+            avgLoss += loss
+            totalEx += 1
 print "Average loss: %f" % (avgLoss / totalEx)
 
 # for round of 16, store which teams made it

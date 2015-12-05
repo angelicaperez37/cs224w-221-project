@@ -181,6 +181,10 @@ class PredictPD():
 
 		print "avgPassVol: %s vs oppAvgPassVol: %s" % (avgPassVol, oppAvgPassVol)
 
+
+		# TODO: wondering if boolean values aren't the most helpful?
+		# TODO: test baseline on r-16
+		# TODO: test baseline on random
 		features["avgPassVol"] = 1 if avgPassVol > oppAvgPassVol else 0
 		features["avgPassPerc"] = 1 if avgPassPerc > oppAvgPassPerc else 0
 
@@ -248,7 +252,6 @@ class PredictPD():
 
 	def initTeamStats(self):
 		for matchday in self.matchdays:
-			print "On " + matchday
 			path = self.folder + matchday + "/networks/"
 			# iterate over games
 			for network in os.listdir(path):
