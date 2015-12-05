@@ -12,7 +12,7 @@ N = 16
 ind = np.arange(N)
 width = 0.35
 
-filename = "games_by_pos/Bayern_games_by_pos.txt"
+filename = "games_by_pos/RealMadrid_games_by_pos.txt"
 games_by_pos = open(filename, "r")
 
 team1 = ""

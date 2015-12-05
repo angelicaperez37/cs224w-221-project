@@ -39,7 +39,7 @@ for team in os.listdir(squad_dir):
 folder = "passing_distributions/2014-15/"
 totalPassesBetweenPos = defaultdict(lambda: defaultdict(int))
 
-matchdays = ["matchday" + str(i) for i in xrange(1, 5)]
+matchdays = ["matchday" + str(i) for i in xrange(1, 7)]
 pos = ["GK", "STR", "DEF", "MID"]
 allPosCombos = [pos1 + "-" + pos2 for pos1 in pos for pos2 in pos]
 
@@ -66,15 +66,24 @@ for matchday in matchdays:
 				totalPassesBetweenPos[teamName][p_key] += int(weight)
 				passesBetweenPos[teamName][p_key] += int(weight)
 
-			if matchID == lastMatchID:
-				print "MatchID: %s" % matchID
-				print "{0:10}{1:<20}{2:<}".format("Position", lastTeamName, teamName)
-				for posPair in allPosCombos:
-					print "{0:10}{1:<20}{2:<}".format(posPair, \
-						passesBetweenPos[lastTeamName][posPair], \
-						passesBetweenPos[teamName][posPair])
-				# reset
-				passesBetweenPos = defaultdict(lambda: defaultdict(int))
+			# this prints the data in a tabular format for each matchID
+			# if matchID == lastMatchID:
+			# 	print "MatchID: %s" % matchID
+			# 	print "{0:10}{1:<20}{2:<}".format("Position", lastTeamName, teamName)
+			# 	for posPair in allPosCombos:
+			# 		print "{0:10}{1:<20}{2:<}".format(posPair, \
+			# 			passesBetweenPos[lastTeamName][posPair], \
+			# 			passesBetweenPos[teamName][posPair])
+			# 	# reset
+			# 	passesBetweenPos = defaultdict(lambda: defaultdict(int))
+
+			# this prints the data in a .csv/parse-able format
+			print "MatchID: %s" % matchID
+			print "Team: %s" % teamName
+			for posPair in allPosCombos:
+				print "{0:10}\t{1:<20}".format(posPair, \
+					passesBetweenPos[teamName][posPair])
+			passesBetweenPos = defaultdict(lambda: defaultdict(int))
 
 			lastMatchID = matchID
 			lastTeamName = teamName
