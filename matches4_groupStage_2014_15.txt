@@ -1,0 +1,64 @@
+Juventus, 2, 0, Malmö FF
+Olympiacos FC, 3, 2, Club Atlético de Madrid
+Liverpool FC, 2, 1, PFC Ludogorets Razgrad
+Real Madrid CF, 5, 1, FC Basel 1893
+SL Benfica, 0, 2, FC Zenit
+AS Monaco FC, 1, 0, Leverkusen
+Borussia Dortmund, 2, 0, Arsenal FC
+Galatasaray AŞ, 1, 1, Anderlecht
+FC Bayern München, 1, 0, Manchester City FC
+AS Roma, 5, 1, PFC CSKA Moskva
+AFC Ajax, 1, 1, Paris Saint-Germain
+FC Barcelona, 1, 0, APOEL FC
+Chelsea FC, 1, 1, FC Schalke 04
+NK Maribor, 1, 1, Sporting Clube de Portugal
+FC Porto, 6, 0, FC BATE Borisov
+Athletic Club, 0, 0, FC Shakhtar Donetsk
+Manchester City FC, 1, 1, AS Roma
+PFC CSKA Moskva, 0, 1, FC Bayern München
+Paris Saint-Germain, 3, 2, FC Barcelona
+APOEL FC, 1, 1, AFC Ajax
+Sporting Clube de Portugal, 0, 1, Chelsea FC
+FC Schalke 04, 1, 1, NK Maribor
+FC BATE Borisov, 2, 1, Athletic Club
+FC Shakhtar Donetsk, 2, 2, FC Porto
+Club Atlético de Madrid, 1, 0, Juventus
+Malmö FF, 2, 0, Olympiacos FC
+FC Basel 1893, 1, 0, Liverpool FC
+PFC Ludogorets Razgrad, 1, 2, Real Madrid CF
+FC Zenit, 0, 0, AS Monaco FC
+Leverkusen, 3, 1, SL Benfica
+Arsenal FC, 4, 1, Galatasaray AŞ
+Anderlecht, 0, 3, Borussia Dortmund
+PFC CSKA Moskva, 2, 2, Manchester City FC
+AS Roma, 1, 7, FC Bayern München
+FC Barcelona, 3, 1, AFC Ajax
+APOEL FC, 0, 1, Paris Saint-Germain
+Chelsea FC, 6, 0, NK Maribor
+FC Schalke 04, 4, 3, Sporting Clube de Portugal
+FC Porto, 2, 1, Athletic Club
+FC BATE Borisov, 0, 7, FC Shakhtar Donetsk
+Club Atlético de Madrid, 5, 0, Malmö FF
+Olympiacos FC, 1, 0, Juventus
+Liverpool FC, 0, 3, Real Madrid CF
+PFC Ludogorets Razgrad, 1, 0, FC Basel 1893
+Leverkusen, 2, 0, FC Zenit
+AS Monaco FC, 0, 0, SL Benfica
+Anderlecht, 1, 2, Arsenal FC
+Galatasaray AŞ, 0, 4, Borussia Dortmund
+Juventus, 3, 2, Olympiacos FC
+Malmö FF, 0, 2, Club Atlético de Madrid
+FC Basel 1893, 4, 0, PFC Ludogorets Razgrad
+Real Madrid CF, 1, 0, Liverpool FC
+SL Benfica, 1, 0, AS Monaco FC
+FC Zenit, 1, 2, Leverkusen
+Arsenal FC, 3, 3, Anderlecht
+Borussia Dortmund, 4, 1, Galatasaray AŞ
+Manchester City FC, 1, 2, PFC CSKA Moskva
+FC Bayern München, 2, 0, AS Roma
+AFC Ajax, 0, 2, FC Barcelona
+Paris Saint-Germain, 1, 0, APOEL FC
+Sporting Clube de Portugal, 4, 2, FC Schalke 04
+NK Maribor, 1, 1, Chelsea FC
+Athletic Club, 0, 2, FC Porto
+FC Shakhtar Donetsk, 5, 0, FC BATE Borisov
