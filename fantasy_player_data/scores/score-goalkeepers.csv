@@ -1,88 +1,87 @@
-Buffon-1-Juventus, 2
-Neuer-1-FC Bayern München, 0
-Stegen-1-FC Barcelona, 0
-Casillas-12-FC Porto, 2
-Navas-1-Real Madrid CF, 1
-Courtois-13-Chelsea FC, 0
-Sirigu-30-Paris Saint-Germain, 0
-Čech-33-Arsenal FC, 0
-Gea-1-Manchester United FC, 2
-Romero-20-Manchester United FC, 0
-Hart-1-Manchester City FC, 2
-Oblak-13-Club Atlético de Madrid, 0
-Bravo-13-FC Barcelona, 0
-Leno-1-Bayer 04 Leverkusen, 0
-Szczęsny-25-AS Roma, 1
-Pyatov-30-FC Shakhtar Donetsk, 2
-Akinfeev-35-PFC CSKA Moskva, 2
-Helton-1-FC Porto, 0
-Muslera-1-Galatasaray AŞ, 0
-Barragán-25-Club Atlético de Madrid, 0
-Benaglio-1-VfL Wolfsburg, 1
-Rico-1-Sevilla FC, 0
-Sanctis-26-AS Roma, 0
-Lopes-1-Olympique Lyonnais, 2
-Trapp-16-Paris Saint-Germain, 0
-Moyà-1-Club Atlético de Madrid, 0
-Casilla-13-Real Madrid CF, 0
-Caballero-13-Manchester City FC, 0
-Begović-1-Chelsea FC, 2
-Ulreich-26-FC Bayern München, 0
-Wiland-1-Malmö FF, 0
-Ospina-13-Arsenal FC, 0
-Neto-25-Juventus, 0
-Zoet-1-PSV Eindhoven, 1
-Casteels-28-VfL Wolfsburg, 0
-Chernik-16-FC BATE Borisov, 2
-Roberto-16-Olympiacos FC, 1
-César-12-SL Benfica, 2
-Krešić-25-Bayer 04 Leverkusen, 0
-Lodygin-1-FC Zenit, 0
-Douchez-1-Paris Saint-Germain, 0
-Kapino-37-Olympiacos FC, 0
-Sommer-1-VfL Borussia Mönchengladbach, 0
-Kerzhakov-41-FC Zenit, 0
-Gorgelin-30-Olympique Lyonnais, 0
-Starke-22-FC Bayern München, 0
-İşcan-67-Galatasaray AŞ, 0
-Shovkovskiy-1-FC Dynamo Kyiv, 0
-Ederson-1-SL Benfica, 0
-Eduardo-34-GNK Dinamo Zagreb, 1
-Koopmans-21-PSV Eindhoven, 0
-Erić-1-FC Astana, 2
-Kanibolotskiy-32-FC Shakhtar Donetsk, 0
-Lopes-13-SL Benfica, 0
-Beto--Sevilla FC, 0
-Kompalla-41-VfL Borussia Mönchengladbach, 0
-Heimeroth-33-VfL Borussia Mönchengladbach, 0
-Sels-1-KAA Gent, 0
-Ryan-25-Valencia CF, 0
-Malafeev-16-FC Zenit, 0
-Sippel-21-VfL Borussia Mönchengladbach, 0
-Pasveer-22-PSV Eindhoven, 0
-Masip-25-FC Barcelona, 0
-Mocio-16-Olympique Lyonnais, 0
-Sarnavskiy-23-FC Shakhtar Donetsk, 0
-Rybka-23-FC Dynamo Kyiv, 0
-Andersson-14-Malmö FF, 0
-Yelldell-22-Bayer 04 Leverkusen, 0
-Ježina-1-GNK Dinamo Zagreb, 0
-Yoel-13-Valencia CF, 0
-Grün-20-VfL Wolfsburg, 0
-Chepchugov-1-PFC CSKA Moskva, 0
-Soroko-34-FC BATE Borisov, 0
-Loginovski-85-FC Astana, 0
-Doménech-24-Valencia CF, 1
-Sivera-35-Valencia CF, 0
-Gönen-99-Galatasaray AŞ, 0
-Chichkan-35-FC BATE Borisov, 0
-Vandenbussche-25-KAA Gent, 0
-Golubnichi-40-FC Astana, 0
-Johansson-30-Malmö FF, 0
-Hasson-41-Maccabi Tel-Aviv FC, 0
-Ohayon-55-Maccabi Tel-Aviv FC, 0
-Azinovic-27-Malmö FF, 0
-Thoelen-20-KAA Gent, 0
-Rajković-95-Maccabi Tel-Aviv FC, 0
-Lifshitz-1-Maccabi Tel-Aviv FC, 0
-Mikulić-33-GNK Dinamo Zagreb, 0
+Buffon, Juventus, GK, 7.0, 2.0
+Neuer, FC Bayern München, GK, 7.0, 0
+Stegen, FC Barcelona, GK, 7.0, 0
+Casillas, FC Porto, GK, 6.5, 2.0
+Navas, Real Madrid CF, GK, 6.0, 1.0
+Courtois, Chelsea FC, GK, 6.0, 0
+Sirigu, Paris Saint-Germain, GK, 6.0, 0
+Čech, Arsenal FC, GK, 6.0, 0
+Gea, Manchester United FC, GK, 6.0, 2.0
+Romero, Manchester United FC, GK, 6.0, 0
+Hart, Manchester City FC, GK, 6.0, 2.0
+Oblak, Club Atlético de Madrid, GK, 5.5, 0
+Bravo, FC Barcelona, GK, 5.5, 0
+Leno, Bayer 04 Leverkusen, GK, 5.5, 0
+Szczęsny, AS Roma, GK, 5.5, 1.0
+Pyatov, FC Shakhtar Donetsk, GK, 5.5, 2.0
+Akinfeev, PFC CSKA Moskva, GK, 5.5, 2.0
+Helton, FC Porto, GK, 5.0, 0
+Muslera, Galatasaray AŞ, GK, 5.0, 0
+Barragán, Club Atlético de Madrid, GK, 5.0, 0
+Benaglio, VfL Wolfsburg, GK, 5.0, 1.0
+Rico, Sevilla FC, GK, 5.0, 0
+Sanctis, AS Roma, GK, 5.0, 0
+Lopes, Olympique Lyonnais, GK, 5.0, 2.0
+Trapp, Paris Saint-Germain, GK, 5.0, 0
+Moyà, Club Atlético de Madrid, GK, 5.0, 0
+Casilla, Real Madrid CF, GK, 5.0, 0
+Caballero, Manchester City FC, GK, 5.0, 0
+Begović, Chelsea FC, GK, 4.5, 2.0
+Ulreich, FC Bayern München, GK, 4.5, 0
+Wiland, Malmö FF, GK, 4.5, 0
+Ospina, Arsenal FC, GK, 4.5, 0
+Neto, Juventus, GK, 4.5, 0
+Zoet, PSV Eindhoven, GK, 4.5, 1.0
+Casteels, VfL Wolfsburg, GK, 4.5, 0
+Chernik, FC BATE Borisov, GK, 4.5, 2.0
+Roberto, Olympiacos FC, GK, 4.5, 1.0
+César, SL Benfica, GK, 4.5, 2.0
+Krešić, Bayer 04 Leverkusen, GK, 4.5, 0
+Lodygin, FC Zenit, GK, 4.5, 0
+Douchez, Paris Saint-Germain, GK, 4.5, 0
+Kapino, Olympiacos FC, GK, 4.5, 0
+Sommer, VfL Borussia Mönchengladbach, GK, 4.5, 0
+Kerzhakov, FC Zenit, GK, 4.0, 0
+Gorgelin, Olympique Lyonnais, GK, 4.0, 0
+Starke, FC Bayern München, GK, 4.0, 0
+İşcan, Galatasaray AŞ, GK, 4.0, 0
+Shovkovskiy, FC Dynamo Kyiv, GK, 4.0, 0
+Ederson, SL Benfica, GK, 4.0, 0
+Eduardo, GNK Dinamo Zagreb, GK, 4.0, 1.0
+Koopmans, PSV Eindhoven, GK, 4.0, 0
+Erić, FC Astana, GK, 4.0, 2.0
+Kanibolotskiy, FC Shakhtar Donetsk, GK, 4.0, 0
+Lopes, SL Benfica, GK, 4.0, 0
+Beto, Sevilla FC, GK, 4.0, 0
+Kompalla, VfL Borussia Mönchengladbach, GK, 4.0, 0
+Heimeroth, VfL Borussia Mönchengladbach, GK, 4.0, 0
+Sels, KAA Gent, GK, 4.0, 0
+Ryan, Valencia CF, GK, 4.0, 0
+Malafeev, FC Zenit, GK, 4.0, 0
+Sippel, VfL Borussia Mönchengladbach, GK, 4.0, 0
+Pasveer, PSV Eindhoven, GK, 3.5, 0
+Masip, FC Barcelona, GK, 3.5, 0
+Mocio, Olympique Lyonnais, GK, 3.5, 0
+Sarnavskiy, FC Shakhtar Donetsk, GK, 3.5, 0
+Rybka, FC Dynamo Kyiv, GK, 3.5, 0
+Yelldell, Bayer 04 Leverkusen, GK, 3.5, 0
+Ježina, GNK Dinamo Zagreb, GK, 3.5, 0
+Yoel, Valencia CF, GK, 3.5, 0
+Grün, VfL Wolfsburg, GK, 3.5, 0
+Chepchugov, PFC CSKA Moskva, GK, 3.5, 0
+Soroko, FC BATE Borisov, GK, 3.5, 0
+Loginovski, FC Astana, GK, 3.5, 0
+Doménech, Valencia CF, GK, 3.5, 1.0
+Sivera, Valencia CF, GK, 3.5, 0
+Gönen, Galatasaray AŞ, GK, 3.5, 0
+Chichkan, FC BATE Borisov, GK, 3.0, 0
+Vandenbussche, KAA Gent, GK, 3.0, 0
+Golubnichi, FC Astana, GK, 3.0, 0
+Johansson, Malmö FF, GK, 3.0, 0
+Hasson, Maccabi Tel-Aviv FC, GK, 3.0, 0
+Ohayon, Maccabi Tel-Aviv FC, GK, 3.0, 0
+Azinovic, Malmö FF, GK, 3.0, 0
+Thoelen, KAA Gent, GK, 3.0, 0
+Rajković, Maccabi Tel-Aviv FC, GK, 3.0, 0
+Lifshitz, Maccabi Tel-Aviv FC, GK, 3.0, 0
+Mikulić, GNK Dinamo Zagreb, GK, 3.0, 0

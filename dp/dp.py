@@ -11,6 +11,12 @@ DEF_FILE = '../fantasy_player_data/positions/defenders'
 MID_FILE = '../fantasy_player_data/positions/midfielders'
 STR_FILE = '../fantasy_player_data/positions/forwards'
 
+GK_SCORE_FILE = '../fantasy_player_data/scores/score-goalkeepers.csv'
+DEF_SCORE_FILE = '../fantasy_player_data/scores/score-defenders.csv'
+MID_SCORE_FILE = '../fantasy_player_data/scores/score-midfielders.csv'
+STR_SCORE_FILE = '../fantasy_player_data/scores/score-forwards.csv'
+
+
 NAME_INDEX = 0
 TEAM_INDEX = 1
 COST_INDEX = 2
@@ -38,12 +44,13 @@ with codecs.open(RANK_FILE, encoding='utf-8') as f:
         teams[team] = rank
 
 goalkeepers = []
-with codecs.open(GK_FILE, encoding='utf-8') as f:
+with codecs.open(GK_SCORE_FILE, encoding='utf-8') as f:
     for line in f:
-        name, team, pos, cost = line.encode('ascii', 'xmlcharrefreplace').split(', ')
+        print "line is: ", line
+        name, team, pos, cost, score = line.encode('ascii', 'xmlcharrefreplace').split(', ')
         assert pos == 'GK'
         cost = float(cost)
-        score = 1.0 / teams[team]  # TODO: scoring function
+        score = float(score)  # TODO: scoring function
         goalkeepers.append((name, team, cost, score))
 
 # reduce goalkeepers
@@ -57,12 +64,12 @@ for goalkeeper in reversed(_reduced_goalkeepers):
         reduced_goalkeepers.append(goalkeeper)
 
 defenders = []
-with codecs.open(DEF_FILE, encoding='utf-8') as f:
+with codecs.open(DEF_SCORE_FILE, encoding='utf-8') as f:
     for line in f:
-        name, team, pos, cost = line.encode('ascii', 'xmlcharrefreplace').split(', ')
+        name, team, pos, cost, score = line.encode('ascii', 'xmlcharrefreplace').split(', ')
         assert pos == 'DEF'
         cost = float(cost)
-        score = 1.0 / teams[team]  # TODO: scoring function
+        score = float(score)  # TODO: scoring function
         defenders.append((name, team, cost, score))
 
 # reduce defenders
@@ -76,12 +83,12 @@ for defender in reversed(_reduced_defenders):
         reduced_defenders.append(defender)
 
 midfielders = []
-with codecs.open(MID_FILE, encoding='utf-8') as f:
+with codecs.open(MID_SCORE_FILE, encoding='utf-8') as f:
     for line in f:
-        name, team, pos, cost = line.encode('ascii', 'xmlcharrefreplace').split(', ')
+        name, team, pos, cost, score = line.encode('ascii', 'xmlcharrefreplace').split(', ')
         assert pos == 'MID'
         cost = float(cost)
-        score = 1.0 / teams[team]  # TODO: scoring function
+        score = float(score)  # TODO: scoring function
         midfielders.append((name, team, cost, score))
 
 # reduce midfielders
@@ -95,12 +102,12 @@ for midfielder in reversed(_reduced_midfielders):
         reduced_midfielders.append(midfielder)
 
 forwards = []
-with codecs.open(STR_FILE, encoding='utf-8') as f:
+with codecs.open(STR_SCORE_FILE, encoding='utf-8') as f:
     for line in f:
-        name, team, pos, cost = line.encode('ascii', 'xmlcharrefreplace').split(', ')
+        name, team, pos, cost, score = line.encode('ascii', 'xmlcharrefreplace').split(', ')
         assert pos == 'STR'
         cost = float(cost)
-        score = 1.0 / teams[team]  # TODO: scoring function
+        score = float(score)  # TODO: scoring function
         forwards.append((name, team, cost, score))
 
 # reduce forwards
