@@ -46,7 +46,6 @@ with codecs.open(RANK_FILE, encoding='utf-8') as f:
 goalkeepers = []
 with codecs.open(GK_SCORE_FILE, encoding='utf-8') as f:
     for line in f:
-        print "line is: ", line
         name, team, pos, cost, score = line.encode('ascii', 'xmlcharrefreplace').split(', ')
         assert pos == 'GK'
         cost = float(cost)

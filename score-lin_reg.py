@@ -13,6 +13,7 @@ import copy
 class LearnScore():
 
 	def __init__(self):
+		print "init"
 		self.fantasyDir = "fantasy_player_data/positions/"
 		self.weights = defaultdict(float)
 
@@ -85,7 +86,7 @@ class LearnScore():
 				p = classes.Player(last_name, num, team, position, price)
 
 				# store player_name-player_num-player_team = Player object
-				key = last_name + "-" + num + "-" + team
+				key = last_name + "-" + position + "-" + team
 				self.allPlayers[key] = p
 				if position == "GK":
 					goalkeepers.append(key)
@@ -161,7 +162,9 @@ class LearnScore():
 			for player in self.allPlayers:
 				last_name, num, team = player.split("-", 2)
 				# TODO: store by lastname-team
-				allPlayers[player].stats = all_player_features[num + "-" + team]
+				self.allPlayers[player].stats = all_player_features[last_name + "-" + team]
+		store_data()
+		print "finished storing data"
 
 	# Average pairwise error over all players in a team
 	# given prediction and gold
@@ -197,17 +200,25 @@ class LearnScore():
 		for w in self.weights:
 			self.weights[w] -= self.stepSize * grad[w]
 
-	def featureExtractor(self, name, team):
+	def featureExtractor(self, p):
+		print "Feature extracting"
 		features = defaultdict(float)
+		name, team, pos, price, perc = p.split(", ")
+		perc = float(perc)
+		key = last_name + "-" + pos + "-" + team
+		stats = self.allPlayers[key].stats
+		print stats
 		# player stats
 		# is goalie
 		# is injured
 		return features
 
 	def train(self):
+		print "Training"
 		numIter = 1
 		files = glob.glob(self.fantasyDir + "updated*")
-		for it in numIter:
+		for it in xrange(numIter):
+			print "Iteration %d" % it
 			for f in files:
 				if not re.search("html", f) and not re.search("allPlayers", f):
 					players = [line.rstrip() for line in open(f, "r")]
@@ -217,11 +228,15 @@ class LearnScore():
 						name, team, pos, price, perc = p.split(", ")
 						perc = float(perc)
 						# print "name: %s, team: %s, pos: %s, price: %s, perc: %f" % (name, team, pos, price, float(perc))
-						features = self.featureExtractor(name, team)
+						features = self.featureExtractor(p)
 						score, loss = self.evaluate(features, perc)
 						self.updateWeights(features, self.weights, perc)
+		for w in self.weights:
+			print w, self.weights[w]
 
 	def test(self):
 		print "bark"
+
 ls = LearnScore()
+print "Gonna train now"
 ls.train()
