@@ -15,6 +15,7 @@ class LearnScore():
 	def __init__(self):
 		self.fantasyDir = "fantasy_player_data/positions/"
 		self.weights = defaultdict(float)
+		self.stepSize = 0.01
 
 		#store all player data
 		players = {}
@@ -42,10 +43,10 @@ class LearnScore():
 			raise "Couldn't find team name"
 
 		# team_to_player_num[team][player_last_name] = player_num
-		team_to_player_num = defaultdict(lambda: defaultdict(str))
+		self.team_to_player_num = defaultdict(lambda: defaultdict(str))
 
 		# team_to_player_name[team][player_num] = player_name
-		team_to_player_name = defaultdict(lambda: defaultdict(str))
+		self.team_to_player_name = defaultdict(lambda: defaultdict(str))
 		# all_player_list includes first and last names for players, player numbers, and teams
 		all_player_lines = [line.rstrip() for line in open("fantasy_player_data/all_players/all_player_list", 'r')]
 
@@ -69,9 +70,9 @@ class LearnScore():
 				if " " in name:
 					last_name = (re.match(".* (.*)$", name)).group(1)
 				else: last_name = name
-
-				team_to_player_num[team][last_name] = num
-				team_to_player_name[team][num] = name
+				# print "last_name: %s, num: %s, team: %s" % (last_name, num, team)
+				self.team_to_player_num[team][last_name] = num
+				self.team_to_player_name[team][num] = name
 
 
 			# store basic player data
@@ -79,9 +80,9 @@ class LearnScore():
 			for line in lines:
 				last_name, team, position, price = line.rstrip().split(", ")
 				price = float(price)
-				team_dict = check_for_accented_key(team, team_to_player_num);
+				team_dict = check_for_accented_key(team, self.team_to_player_num);
 
-				num = team_dict[last_name]
+				num = self.team_to_player_num[team][last_name]
 				p = classes.Player(last_name, num, team, position, price)
 
 				# store player_name-player_num-player_team = Player object
@@ -161,7 +162,9 @@ class LearnScore():
 			for player in self.allPlayers:
 				last_name, num, team = player.split("-", 2)
 				# TODO: store by lastname-team
-				allPlayers[player].stats = all_player_features[num + "-" + team]
+				self.allPlayers[player].stats = all_player_features[num + "-" + team]
+		store_data()
+
 
 	# Average pairwise error over all players in a team
 	# given prediction and gold
@@ -197,31 +200,90 @@ class LearnScore():
 		for w in self.weights:
 			self.weights[w] -= self.stepSize * grad[w]
 
-	def featureExtractor(self, name, team):
+	def featureExtractor(self, p):
 		features = defaultdict(float)
+		name, team, pos, price, perc = p.split(", ")
+		perc = float(perc)
+		last_name = re.sub(".* ", "", name)
+		num = self.team_to_player_num[team][last_name]
+		key = last_name + "-" + num + "-" + team
+
+		p = self.allPlayers[key]
+		stats = p.stats
+		cost = p.price
+
+		if len(stats) > 0:
+			features["playedInGame"] =  1 if stats["M"] > 0 else 0
+			features["playedMoreThan60"] = 2 if stats["M"] >= 60 else 0
+			features["scoredAsGKOrDEF"] =stats["G"] * 6 if pos == "GK" or pos == "DEF" else 0
+			features["scoredAsMID"] = stats["G"] * 5 if pos == "MID" else 0
+			features["scoredAsSTR"] = stats["G"] * 4 if pos == "STR" else 0
+			features["yellowCard"] = -1 * stats["Y"]
+			features["redCard"] =-3 * stats["R"]
+			features["goaliePenalty"] = -1 if pos == "GK" else 0
+
 		# player stats
 		# is goalie
 		# is injured
 		return features
 
 	def train(self):
+		print "Training"
 		numIter = 1
 		files = glob.glob(self.fantasyDir + "updated*")
-		for it in numIter:
+		for it in xrange(numIter):
+			print "Iteration %d" % it
 			for f in files:
 				if not re.search("html", f) and not re.search("allPlayers", f):
 					players = [line.rstrip() for line in open(f, "r")]
 					for p in players:
 						if "#" in p: continue
-						print p
 						name, team, pos, price, perc = p.split(", ")
 						perc = float(perc)
 						# print "name: %s, team: %s, pos: %s, price: %s, perc: %f" % (name, team, pos, price, float(perc))
-						features = self.featureExtractor(name, team)
+						features = self.featureExtractor(p)
 						score, loss = self.evaluate(features, perc)
 						self.updateWeights(features, self.weights, perc)
+		print "--------------------"
+		print "Printing out weights"
+		print "--------------------"
+		for w in self.weights:
+			print w, ": ", self.weights[w]
 
 	def test(self):
-		print "bark"
+		gk_file = "fantasy_player_data/scores/score-lr-goalkeepers"
+		def_file = "fantasy_player_data/scores/score-lr-defenders"
+		mid_file = "fantasy_player_data/scores/score-lr-midfielders"
+		str_file = "fantasy_player_data/scores/score-lr-forwards"
+
+		gk_out = open(gk_file, "w+")
+		def_out = open(def_file, "w+")
+		mid_out = open(mid_file, "w+")
+		str_out = open(str_file, "w+")
+
+		files = glob.glob(self.fantasyDir + "updated*")
+		for f in files:
+			if not re.search("html", f) and not re.search("allPlayers", f):
+				players = [line.rstrip() for line in open(f, "r")]
+				for p in players:
+					if "#" in p: continue
+					name, team, pos, price, perc = p.split(", ")
+					perc = float(perc)
+					# print "name: %s, team: %s, pos: %s, price: %s, perc: %f" % (name, team, pos, price, float(perc))
+					features = self.featureExtractor(p)
+					score, loss = self.evaluate(features, perc)
+					# score *= 10
+					line = "%s, %s, %s, %s, %s\n" % (name, team, pos, price, score)
+					if pos == "GK":
+						gk_out.write(line)
+					elif pos == "DEF":
+						def_out.write(line)
+					elif pos == "MID":
+						mid_out.write(line)
+					elif pos == "STR":
+						str_out.write(line)
+
+
 ls = LearnScore()
 ls.train()
+ls.test()

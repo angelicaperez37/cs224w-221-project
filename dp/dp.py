@@ -11,11 +11,17 @@ DEF_FILE = '../fantasy_player_data/positions/defenders'
 MID_FILE = '../fantasy_player_data/positions/midfielders'
 STR_FILE = '../fantasy_player_data/positions/forwards'
 
-GK_SCORE_FILE = '../fantasy_player_data/scores/score-goalkeepers.csv'
-DEF_SCORE_FILE = '../fantasy_player_data/scores/score-defenders.csv'
-MID_SCORE_FILE = '../fantasy_player_data/scores/score-midfielders.csv'
-STR_SCORE_FILE = '../fantasy_player_data/scores/score-forwards.csv'
+# first attempt at scoring
+# GK_SCORE_FILE = '../fantasy_player_data/scores/score-goalkeepers.csv'
+# DEF_SCORE_FILE = '../fantasy_player_data/scores/score-defenders.csv'
+# MID_SCORE_FILE = '../fantasy_player_data/scores/score-midfielders.csv'
+# STR_SCORE_FILE = '../fantasy_player_data/scores/score-forwards.csv'
 
+# lr attempt at scoring
+GK_SCORE_FILE = '../fantasy_player_data/scores/score-lr-goalkeepers'
+DEF_SCORE_FILE = '../fantasy_player_data/scores/score-lr-defenders'
+MID_SCORE_FILE = '../fantasy_player_data/scores/score-lr-midfielders'
+STR_SCORE_FILE = '../fantasy_player_data/scores/score-lr-forwards'
 
 NAME_INDEX = 0
 TEAM_INDEX = 1
@@ -46,7 +52,6 @@ with codecs.open(RANK_FILE, encoding='utf-8') as f:
 goalkeepers = []
 with codecs.open(GK_SCORE_FILE, encoding='utf-8') as f:
     for line in f:
-        print "line is: ", line
         name, team, pos, cost, score = line.encode('ascii', 'xmlcharrefreplace').split(', ')
         assert pos == 'GK'
         cost = float(cost)
