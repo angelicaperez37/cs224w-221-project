@@ -96,7 +96,7 @@ def store_data():
 	matchdays = os.listdir("player_statistics/2015-16/")
 
 	for matchday in matchdays:
-		if not matchday.endswith(".py") and not matchday.endswith("Store"):
+		if not matchday.endswith(".py") and not matchday.endswith("Store") and not matchday.endswith(".swp"):
 
 			folder = "player_statistics/2015-16/" + matchday + "/csv/"
 
@@ -166,13 +166,16 @@ def store_data():
 # yellow card: -1 = Y * -1
 # red card: -3 = R * -3
 # downweight goalies by -1 per article
-def score(outfilename, position):
+def score(outfilename, position, pos_name):
 	
 	outfile = open(outfilename, "w+")
 
 	for p in position:
 		stats = allPlayers[p].stats
 		pos = allPlayers[p].position
+		name = allPlayers[p].name
+		cost = allPlayers[p].price
+		team = allPlayers[p].team
 
 		score = 0
 		if len(stats) > 0:
@@ -184,19 +187,20 @@ def score(outfilename, position):
 			score += -1 * stats["Y"]
 			score += -3 * stats["R"]
 			score += -1 if pos == "GK" else 0
-		outfile.write("%s, %d\n" % (p, score))
+		if pos == pos_name:
+			outfile.write("%s, %s, %s, %s, %s\n" % (name, team, pos, cost, score))
 
 store_data()
 direct = "fantasy_player_data/scores/"
-sys.stderr.write("Scoring DEF")
-score(direct + "score-defenders.csv", defenders)
+sys.stderr.write("Scoring DEF\n")
+score(direct + "score-defenders.csv", defenders, "DEF")
 
-sys.stderr.write("Scoring GK")
-score(direct + "score-goalkeepers.csv", goalkeepers)
+sys.stderr.write("Scoring GK\n")
+score(direct + "score-goalkeepers.csv", goalkeepers, "GK")
 
-sys.stderr.write("Scoring MID")
-score(direct + "score-midfielders.csv", midfielders)
+sys.stderr.write("Scoring MID\n")
+score(direct + "score-midfielders.csv", midfielders, "MID")
 
-sys.stderr.write("Scoring STR")
-score(direct + "score-forwards.csv", forwards)
+sys.stderr.write("Scoring STR\n")
+score(direct + "score-forwards.csv", forwards, "STR")
 
