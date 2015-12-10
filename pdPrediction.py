@@ -61,14 +61,22 @@ class PredictPD():
 		self.passPercPerTeam = defaultdict(float)
 
 		self.teamStatsByMatch = defaultdict(lambda: defaultdict(list))
+		self.matchesWithScores = defaultdict(str)
+
+		self.teamPlayedWith = defaultdict(list)
+		self.teamWonAgainst = defaultdict(list)
+
+		self.teamNamesToMatchID = defaultdict(list)
+		self.matchIDToScore = defaultdict(str)
 
 	# Average pairwise error over all players in a team
 	# given prediction and gold
 	def evaluate(self, features, weight):
 		score = self.computeScore(features, self.weights)
 		loss = self.computeLoss(features, self.weights, float(weight))
-		# print "Score: %f, loss: %f" % (score, loss)
-		return (score, loss)
+		pred = self.predict(score)
+		print "Score: %f, pred: %f, actual: %f" % (score, pred, weight)
+		return (score, loss, pred)
 
 	def computeLoss(self, features, weights, label):
 		return (self.computeScore(features, weights) - label)**2
@@ -148,7 +156,7 @@ class PredictPD():
 		elif matchID >= 2014427 and matchID <= 2014430:
 			return 8
 
-	def featureExtractor(self, teamName, p1, p2, matchID, matchNum, weight):
+	def featureExtractor(self, teamName, p1, p2, matchID, matchNum, weight, score):
 
 		avgPasses = self.countAvgPassesFeature.getCount(teamName, p1, p2)
 
@@ -168,8 +176,8 @@ class PredictPD():
 		diffInRank = self.rankFeature.isHigherInRank(teamName, oppTeam)
 
 		features = defaultdict(float)
-		features["avgPasses"] = avgPasses
-		features["isSamePos"] = isSamePos
+		# features["avgPasses"] = avgPasses
+		# features["isSamePos"] = isSamePos
 		# features["isDiffPos"] = isDiffPos
 		features["diffInRank"] = diffInRank
 
@@ -243,13 +251,13 @@ class PredictPD():
 					simTeamDistance = sim
 					simTeam = sim
 			# 3. find out whether the game was won or lost
-			# features["wonAgainstSimTeam"] = self.teamWonAgainst[teamName][matchday]
+			features["wonAgainstSimTeam"] = self.teamWonAgainst[teamName][matchday]
 
 		# mean degree feature
-		features["meanDegree"] = self.meanDegreeFeature.getMeanDegree(matchID, teamName)
+		# features["meanDegree"] = self.meanDegreeFeature.getMeanDegree(matchID, teamName)
 
 		# features["betwPerGameP1"] = self.betweenFeature.getBetweenCentr(matchID, teamName, p1)
-		features["betwPerGameP2"] = self.betweenFeature.getBetweenCentr(matchID, teamName, p2)
+		# features["betwPerGameP2"] = self.betweenFeature.getBetweenCentr(matchID, teamName, p2)
 
 		# features["avgPassComplPerP1"] = self.passComplAttempFeature.getPC(teamName, p1)
 		# features["avgPassComplPerP2"] = self.passComplAttempFeature.getPC(teamName, p2)
@@ -260,8 +268,27 @@ class PredictPD():
 
 		return features
 
-	def initMatches(self):
 
+	def strip_accents(self, text):
+	    """
+	    Strip accents from input String.
+
+	    :param text: The input string.
+	    :type text: String.
+
+	    :returns: The processed String.
+	    :rtype: String.
+	    """
+	    try:
+	        text = unicode(text, 'utf-8')
+	    except NameError: # unicode is a default on python 3 
+	        pass
+	    text = unicodedata.normalize('NFD', text)
+	    text = text.encode('ascii', 'ignore')
+	    text = text.decode("utf-8")
+	    return str(text)
+
+	def initMatches(self):
 		# store match data for all games
 		# match data including team + opponent team
 		allGames = copy.deepcopy(self.matchdays)
@@ -284,25 +311,65 @@ class PredictPD():
 					if m == "":
 						self.matches[matchID] = teamName
 					else:
+						team1 = self.matches[matchID]
 						self.matches[matchID] += "/" + teamName
+						
+						team2 = teamName
+						team1 = self.strip_accents(team1)
+						team2 = self.strip_accents(team2)
+
+						print "stripped team1: %s, team2: %s" % (team1, team2)
+						self.teamNamesToMatchID[team1].append(matchID)
+						self.teamNamesToMatchID[team2].append(matchID)
+						# print teamNamesToMatchID[self.matches[matchID]]
+						print "teamNamesToMatchID[%s] = %s" % (team1, self.teamNamesToMatchID[team1])
+						print "teamNamesToMatchID[%s] = %s" % (team2, self.teamNamesToMatchID[team2])
+
 
 		allScoresFilename = "scores/2014-15_allScores.txt"
 		allScores = open(allScoresFilename, "r")
-		self.matchesWithScores = [line.rstrip() for line in allScores]
-		self.teamPlayedWith = defaultdict(list)
-		self.teamWonAgainst = defaultdict(list)
+		self.allMatchesWithScores = [line.rstrip() for line in allScores]
 
 		# for every team, store opponents in order by matchday
-		for match in self.matchesWithScores:
+		teamsToNumMatches = defaultdict(int)
+		for match in self.allMatchesWithScores:
+			print "match was ", match
 			team1, score1, score2, team2 = match.split(", ")
 			team1Won = 0
 			if score1 > score2:
 				team1Won = 1
 
+			team1 = self.strip_accents(team1)
+			team2 = self.strip_accents(team2)
+
+			print "teamNamesToMatchID[%s] = %s" % (team1 +  "/" + team2, self.teamNamesToMatchID[team1])
+			matchNum = teamsToNumMatches[team1 + "/" + team2]
+			matchID = self.teamNamesToMatchID[team1][matchNum]
+			self.matchIDToScore[matchID] = match
+			# if len(teamNamesToMatchID[team1]) != 0:
+			# 	matchNum = teamsToNumMatches[team1]
+			# 	matchID = teamNamesToMatchID[team1][matchNum]
+			# else: 
+			# 	matchNum = teamsToNumMatches[team2]
+			# 	matchID = teamNamesToMatchID[team2][matchNum]
+
+			print "match num is: ", matchNum
+			
+			print "corresponding matchID: %s" % matchID
+			# figure out which index this is by how many games have been found for them
+
 			self.teamPlayedWith[team1].append(team2)
 			self.teamPlayedWith[team2].append(team1)
+			print "history for %s and %s" % (team1, team2)
 			self.teamWonAgainst[team1].append(team1Won)
 			self.teamWonAgainst[team2].append(abs(1 - team1Won))
+			teamsToNumMatches[team1] += 1
+			teamsToNumMatches[team2] += 1
+
+	def predict(self, score):
+		if score >= 0.5:
+			return 1
+		else: return 0
 
 	def initTeamStats(self):
 		for matchday in self.matchdays:
@@ -324,7 +391,7 @@ class PredictPD():
 	# 	have features calculate numbers based on data
 	# 	learn weights for features via supervised data (group stage games) and SGD/EM
 	def train(self):
-		# iterate over matchdays, predicting passes, performing SGD, etc.
+		# iterate over matchdays, predicting match outcomes, performing SGD
 
 		num_iter = 2
 		self.initMatches()
@@ -334,8 +401,9 @@ class PredictPD():
 		allPosCombos = [pos1 + "-" + pos2 for pos1 in pos for pos2 in pos]
 
 		for i in xrange(num_iter):
-			avgLoss = 0
+			totalCorrect = 0
 			totalEx = 0
+			avgLoss = 0
 			print "Iteration %s" % i
 			print "------------"
 			for w in self.weights:
@@ -367,29 +435,30 @@ class PredictPD():
 				teamName = self.getTeamNameFromNetwork(network)
 				matchID = self.getMatchIDFromFile(network)
 				# print "team: %s" % teamName
+				matchdayNum = self.getMatchday(matchID)
+				str_teamName = self.strip_accents(teamName)
+				# score = self.matchIDToScore[matchID]
+				
+				# print "%s is matchday %s" % (matchID, matchdayNum)
+				# print "history for %s is" % teamName, self.teamWonAgainst[teamName]
+				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
 				for players in edgeFile:
 					p1, p2, weight = players.rstrip().split("\t")
-					# print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
 
-					# teamFile = open(path + matchID + "_tpd-" + re.sub(" ", "_", teamName) + "-team", "r")
-					# for line in teamFile:
-					# 	stats = line.rstrip().split(", ")
-					# self.passComplPerTeam[teamName] += float(stats[0])
-					# self.passAttemPerTeam[teamName] += float(stats[1])
-					# self.passPercPerTeam[teamName] += float(stats[2])
-
-					features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight)
+					features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight, didWin)
 
 					# for f in features:
 					# 	print "features[%s] = %f" % (f, float(features[f]))
 					# for w in self.weights:
 					# 	print "weights[%s] = %f" % (w, float(self.weights[w]))
 
-					score, loss = self.evaluate(features, weight)
- 					self.updateWeights(features, self.weights, int(weight))
+					score, loss, pred = self.evaluate(features, didWin)
+ 					self.updateWeights(features, self.weights, int(didWin))
+ 					totalCorrect += 1 if int(pred) == int(didWin) else 0
  					avgLoss += loss
 					totalEx += 1
 				matchNum += 1
+			print "Total correct: %f" % (totalCorrect / float(totalEx))
 			print "Average loss: %f" % (avgLoss / totalEx)
 
 	# Testing
@@ -414,7 +483,9 @@ class PredictPD():
 		print "On " + matchday
 		path = self.folder + matchday + "/networks/"
 		# iterate over games
+		totalCorrect = 0
 		for network in os.listdir(path):
+
 			if re.search("-edges", network):
 				edgeFile = open(path + network, "r")
 
@@ -422,28 +493,34 @@ class PredictPD():
 
 				teamName = self.getTeamNameFromNetwork(network)
 				matchID = self.getMatchIDFromFile(network)
+				matchdayNum = self.getMatchday(matchID)
+				str_teamName = self.strip_accents(teamName)
+				
+				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
 				print "team: %s" % teamName
 				for players in edgeFile:
 					p1, p2, weight = players.rstrip().split("\t")
 					print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
 
-					features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight)
+					features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight, didWin)
 
 					for f in features:
 						print "features[%s] = %f" % (f, float(features[f]))
 					for w in self.weights:
 						print "weights[%s] = %f" % (w, float(self.weights[w]))
 
-					score, loss = self.evaluate(features, weight)
+					score, loss, pred = self.evaluate(features, didWin)
 
 					# print out predicted so can visually compare to actual
 					predEdgeFile.write(p1 + "\t" + p2 + "\t" + str(score) + "\n")
 
 					avgLoss += loss
+					totalCorrect += 1 if int(pred) == int(didWin) else 0
 					totalEx += 1
 				matchNum += 1
 
 		print "Average loss: %f" % (avgLoss / totalEx)
+		print "Total correct: %f" % (totalCorrect / float(totalEx))
 		print "Total average loss: %f" % avgLoss
 		print "Total examples (passes): %f" % totalEx
 

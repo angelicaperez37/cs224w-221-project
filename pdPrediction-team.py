@@ -8,7 +8,7 @@ from collections import defaultdict
 import unicodedata
 import random
 
-class PredictPD():
+class PredictMatchOutcome():
 
 	def __init__(self):
 
@@ -164,16 +164,16 @@ class PredictPD():
 		# avgPasses = totalPasses / (matchNum + 1)
 		# ----
 
-		isSamePos = self.playerPosFeature.isSamePos(teamName, p1, p2)
-		isDiffPos = abs(1 - isSamePos)
+		# isSamePos = self.playerPosFeature.isSamePos(teamName, p1, p2)
+		# isDiffPos = abs(1 - isSamePos)
 
 		oppTeam = self.getOppTeam(matchID, teamName)
 		diffInRank = self.rankFeature.isHigherInRank(teamName, oppTeam)
 
 		features = defaultdict(float)
 		# features["avgPasses"] = avgPasses
-		features["isSamePos"] = isSamePos
-		features["isDiffPos"] = isDiffPos
+		# features["isSamePos"] = isSamePos
+		# features["isDiffPos"] = isDiffPos
 		features["diffInRank"] = diffInRank
 
 		pos1 = self.teamNumToPos[teamName][p1]
@@ -197,7 +197,7 @@ class PredictPD():
 		avgPassesPerPos = self.countPassesPosFeature.getCount(teamName, p_key)
 		# ---
 
-		features["avgPassesPerPos"] = avgPassesPerPos
+		# features["avgPassesPerPos"] = avgPassesPerPos
 
 
 		# --- Running average
@@ -261,7 +261,7 @@ class PredictPD():
 		# mean degree feature
 		# features["meanDegree"] = self.meanDegreeFeature.getMeanDegree(matchID, teamName)
 		
-		features["betwPerGameP1"] = self.betweenFeature.getBetweenCentr(matchID, teamName, p1)
+		# features["betwPerGameP1"] = self.betweenFeature.getBetweenCentr(matchID, teamName, p1)
 		# features["betwPerGameP2"] = self.betweenFeature.getBetweenCentr(matchID, teamName, p2)
 
 		# features["avgPCPercPerP1"] = self.passComplAttempFeature.getPCPerc(teamName, p1)
@@ -465,6 +465,6 @@ class PredictPD():
 		print "avgLosstotal: %f" % avgLoss
 		print "total examples: %f" % totalEx
 
-pred = PredictPD()
+pred = PredictMatchOutcome()
 pred.train()
 pred.test()
