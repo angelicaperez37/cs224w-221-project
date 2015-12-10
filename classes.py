@@ -316,6 +316,7 @@ class PassesComplAttempPerPlayerFeature():
 
 						players = [line.rstrip() for line in playerFile]
 						for player in players:
+							print "player is ", player
 							num, pc, pa, percPc = player.split(",")
 							self.pcPerPlayer[teamName][num] += float(pc) / 6.0
 							# print "teamName: %s, num: %s, %f" % (teamName, num, self.pcPerPlayer[teamName][num])
