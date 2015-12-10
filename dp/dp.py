@@ -11,6 +11,8 @@ DEF_FILE = '../fantasy_player_data/positions/defenders'
 MID_FILE = '../fantasy_player_data/positions/midfielders'
 STR_FILE = '../fantasy_player_data/positions/forwards'
 
+NAME_INDEX = 0
+TEAM_INDEX = 1
 COST_INDEX = 2
 SCORE_INDEX = 3
 
@@ -194,3 +196,59 @@ for i in xrange(2, NUM_STR + 1):
             prev = str_m[i - 1, j - forward[COST_INDEX]]
             if str_m[i, j][0] < prev[0] + forward[SCORE_INDEX]:
                 str_m[i, j] = prev[0] + forward[SCORE_INDEX], prev[1] + [forward]
+
+# multiple-choice knapsack problem
+m = {}
+for i in arange(0.0, BUDGET + STEP, STEP):
+    m['GK', i] = gk_m[NUM_GK, i]
+min_cost = reduced_goalkeepers[0][COST_INDEX] * NUM_GK
+min_def_cost = reduced_defenders[0][COST_INDEX] * NUM_DEF
+for i in arange(0.0, BUDGET + STEP, STEP):
+    m['GK+DEF', i] = float('-inf'), [None] * (NUM_GK+NUM_DEF)
+    for j in arange(min_def_cost, i - min_cost + STEP, STEP):
+        prev = m['GK', i - j]
+        curr = def_m[NUM_DEF, j]
+        if m['GK+DEF', i][0] < prev[0] + curr[0]:
+            m['GK+DEF', i] = prev[0] + curr[0], prev[1] + curr[1]
+min_cost += min_def_cost
+min_mid_cost = reduced_midfielders[0][COST_INDEX] * NUM_MID
+for i in arange(0.0, BUDGET + STEP, STEP):
+    m['GK+DEF+MID', i] = float('-inf'), [None] * (NUM_GK+NUM_DEF+NUM_MID)
+    for j in arange(min_mid_cost, i - min_cost + STEP, STEP):
+        prev = m['GK+DEF', i - j]
+        curr = mid_m[NUM_MID, j]
+        if m['GK+DEF+MID', i][0] < prev[0] + curr[0]:
+            m['GK+DEF+MID', i] = prev[0] + curr[0], prev[1] + curr[1]
+min_cost += min_mid_cost
+min_str_cost = reduced_forwards[0][COST_INDEX] * NUM_STR
+m['GK+DEF+MID+STR', BUDGET] = float('-inf'), [None] * (NUM_GK+NUM_DEF+NUM_MID+NUM_STR)
+for i in arange(min_str_cost, BUDGET - min_cost + STEP, STEP):
+    prev = m['GK+DEF+MID', BUDGET - i]
+    curr = str_m[NUM_STR, i]
+    if m['GK+DEF+MID+STR', BUDGET][0] < prev[0] + curr[0]:
+        m['GK+DEF+MID+STR', BUDGET] = prev[0] + curr[0], prev[1] + curr[1]
+
+solution = m['GK+DEF+MID+STR', BUDGET][1]
+name_len = max(len(x[NAME_INDEX]) for x in solution)
+team_len = max(len(x[TEAM_INDEX]) for x in solution)
+total_cost = sum(x[COST_INDEX] for x in solution)
+total_score = sum(x[SCORE_INDEX] for x in solution)
+
+# print solution
+print 'goalkeepers:'
+for i in xrange(NUM_GK):
+    print '  {0[0]:{1}}\t{0[1]:{2}}\t{0[2]}\t{0[3]}'.format(solution.pop(0), name_len, team_len)
+print
+print 'defenders:'
+for i in xrange(NUM_DEF):
+    print '  {0[0]:{1}}\t{0[1]:{2}}\t{0[2]}\t{0[3]}'.format(solution.pop(0), name_len, team_len)
+print
+print 'midfielders:'
+for i in xrange(NUM_MID):
+    print '  {0[0]:{1}}\t{0[1]:{2}}\t{0[2]}\t{0[3]}'.format(solution.pop(0), name_len, team_len)
+print
+print 'forwards:'
+for i in xrange(NUM_STR):
+    print '  {0[0]:{1}}\t{0[1]:{2}}\t{0[2]}\t{0[3]}'.format(solution.pop(0), name_len, team_len)
+print
+print 'sums:  ' + ' ' * (name_len - len('sums:')) + '\t' + ' ' * team_len + '\t' + str(total_cost) + '\t' + str(total_score)
