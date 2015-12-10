@@ -169,8 +169,8 @@ class PredictPD():
 		# avgPasses = totalPasses / (matchNum + 1)
 		# ----
 
-		isSamePos = self.playerPosFeature.isSamePos(teamName, p1, p2)
-		isDiffPos = abs(1 - isSamePos)
+		# isSamePos = self.playerPosFeature.isSamePos(teamName, p1, p2)
+		# isDiffPos = abs(1 - isSamePos)
 
 		oppTeam = self.getOppTeam(matchID, teamName)
 		diffInRank = self.rankFeature.isHigherInRank(teamName, oppTeam)
@@ -186,7 +186,7 @@ class PredictPD():
 
 		# keep a running total of past passes between positions
 		# how about a running average...
-		p_key = pos1 + "-" + pos2
+		# p_key = pos1 + "-" + pos2
 		# --- Average passes per position, running average
 		
 		# self.totalPassesBetweenPos[teamName][p_key] += int(weight)
@@ -198,7 +198,7 @@ class PredictPD():
 		# ---
 		
 		# --- Average passes per position, precomputed
-		avgPassesPerPos = self.countPassesPosFeature.getCount(teamName, p_key)
+		# avgPassesPerPos = self.countPassesPosFeature.getCount(teamName, p_key)
 		# ---
 
 		# features["avgPassesPerPos"] = avgPassesPerPos
@@ -442,21 +442,29 @@ class PredictPD():
 				# print "%s is matchday %s" % (matchID, matchdayNum)
 				# print "history for %s is" % teamName, self.teamWonAgainst[teamName]
 				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
-				for players in edgeFile:
-					p1, p2, weight = players.rstrip().split("\t")
+				# train on each team instead of each pass
+				features = self.featureExtractor(teamName, "", "", matchID, matchNum, 0, didWin)
+				score, loss, pred = self.evaluate(features, didWin)
 
-					features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight, didWin)
+				self.updateWeights(features, self.weights, int(didWin))
+				totalCorrect += 1 if int(pred) == int(didWin) else 0
+				avgLoss += loss
+				totalEx += 1
+				# for players in edgeFile:
+				# 	p1, p2, weight = players.rstrip().split("\t")
 
-					# for f in features:
-					# 	print "features[%s] = %f" % (f, float(features[f]))
-					# for w in self.weights:
-					# 	print "weights[%s] = %f" % (w, float(self.weights[w]))
+				# 	features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight, didWin)
 
-					score, loss, pred = self.evaluate(features, didWin)
- 					self.updateWeights(features, self.weights, int(didWin))
- 					totalCorrect += 1 if int(pred) == int(didWin) else 0
- 					avgLoss += loss
-					totalEx += 1
+				# 	# for f in features:
+				# 	# 	print "features[%s] = %f" % (f, float(features[f]))
+				# 	# for w in self.weights:
+				# 	# 	print "weights[%s] = %f" % (w, float(self.weights[w]))
+
+				# 	score, loss, pred = self.evaluate(features, didWin)
+ 			# 		self.updateWeights(features, self.weights, int(didWin))
+ 			# 		totalCorrect += 1 if int(pred) == int(didWin) else 0
+ 			# 		avgLoss += loss
+				# 	totalEx += 1
 				matchNum += 1
 			print "Total correct: %f" % (totalCorrect / float(totalEx))
 			print "Average loss: %f" % (avgLoss / totalEx)
@@ -489,7 +497,7 @@ class PredictPD():
 			if re.search("-edges", network):
 				edgeFile = open(path + network, "r")
 
-				predEdgeFile = open("predicted/pred-" + network, "w+")
+				# predEdgeFile = open("predicted/pred-" + network, "w+")
 
 				teamName = self.getTeamNameFromNetwork(network)
 				matchID = self.getMatchIDFromFile(network)
@@ -498,25 +506,34 @@ class PredictPD():
 				
 				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
 				print "team: %s" % teamName
-				for players in edgeFile:
-					p1, p2, weight = players.rstrip().split("\t")
-					print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
 
-					features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight, didWin)
+				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
+				# train on each team instead of each pass
+				features = self.featureExtractor(teamName, "", "", matchID, matchNum, 0, didWin)
+				score, loss, pred = self.evaluate(features, didWin)
+				self.updateWeights(features, self.weights, int(didWin))
+				totalCorrect += 1 if int(pred) == int(didWin) else 0
+				avgLoss += loss
+				totalEx += 1
+				# for players in edgeFile:
+				# 	p1, p2, weight = players.rstrip().split("\t")
+				# 	print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
 
-					for f in features:
-						print "features[%s] = %f" % (f, float(features[f]))
-					for w in self.weights:
-						print "weights[%s] = %f" % (w, float(self.weights[w]))
+				# 	features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight, didWin)
 
-					score, loss, pred = self.evaluate(features, didWin)
+				# 	for f in features:
+				# 		print "features[%s] = %f" % (f, float(features[f]))
+				# 	for w in self.weights:
+				# 		print "weights[%s] = %f" % (w, float(self.weights[w]))
 
-					# print out predicted so can visually compare to actual
-					predEdgeFile.write(p1 + "\t" + p2 + "\t" + str(score) + "\n")
+				# 	score, loss, pred = self.evaluate(features, didWin)
 
-					avgLoss += loss
-					totalCorrect += 1 if int(pred) == int(didWin) else 0
-					totalEx += 1
+				# 	# print out predicted so can visually compare to actual
+				# 	# predEdgeFile.write(p1 + "\t" + p2 + "\t" + str(score) + "\n")
+
+				# 	avgLoss += loss
+				# 	totalCorrect += 1 if int(pred) == int(didWin) else 0
+				# 	totalEx += 1
 				matchNum += 1
 
 		print "Average loss: %f" % (avgLoss / totalEx)
@@ -524,6 +541,6 @@ class PredictPD():
 		print "Total average loss: %f" % avgLoss
 		print "Total examples (passes): %f" % totalEx
 
-pred = PredictPD()
-pred.train()
-pred.test()
+predsys = PredictPD()
+predsys.train()
+predsys.test()
