@@ -7,6 +7,10 @@ import re
 from collections import defaultdict
 import unicodedata
 import random
+import sys
+import ast
+
+NUM_FEATURES = 21
 
 class PredictPD():
 
@@ -246,32 +250,43 @@ class PredictPD():
 		# -------End calculations
 
 		# -------Features. TODO: Experiment!
-		features["diffInRank"] = diffInRank
-  		features["avgPassPerc"] = avgPassPerc
-		features["higherPassPerc"] = 1 if avgPassPerc > oppAvgPassPerc else 0
-		features["higherPassVol"] = 1 if avgPassCompl > oppAvgPassCompl else 0
-		features["avgBC"] = self.betweenFeature.getAvgBetweenCentr(teamName)
-		features["meanDegree"] = self.meanDegreeFeature.getMeanDegree(matchID, teamName)
-		
-		if len(history) > 0:
+                if len(sys.argv) == 1:
+                    flags = (1 << NUM_FEATURES) - 1  # all features enabled
+                else:
+                    try:
+                        flags = int(sys.argv[1])
+                    except ValueError:
+                        flag_list = ast.literal_eval(sys.argv[1])
+                        flags = 0
+                        for flag in flag_list:
+                            flags |= 1 << flag
+
+		if flags & 1 << 0: features["diffInRank"] = diffInRank
+  		if flags & 1 << 1: features["avgPassPerc"] = avgPassPerc
+		if flags & 1 << 2: features["higherPassPerc"] = 1 if avgPassPerc > oppAvgPassPerc else 0
+		if flags & 1 << 3: features["higherPassVol"] = 1 if avgPassCompl > oppAvgPassCompl else 0
+		if flags & 1 << 4: features["avgBC"] = self.betweenFeature.getAvgBetweenCentr(teamName)
+		if flags & 1 << 5: features["meanDegree"] = self.meanDegreeFeature.getMeanDegree(matchID, teamName)
+		if flags & 1 << 6: 
+		    if len(history) > 0:
 			features["wonAgainstSimTeam"] = self.teamWonAgainst[teamName][matchday]
-		features["onTarget"] = onTarget
-		features["woodwork"] = woodwork
-		features["avgYellowCards"] = yCards
-		features["avgRedCards"] = rCards
-		features["blocked"] = blocked
+		if flags & 1 << 7: features["onTarget"] = onTarget
+		if flags & 1 << 8: features["woodwork"] = woodwork
+		if flags & 1 << 9: features["avgYellowCards"] = yCards
+		if flags & 1 << 10: features["avgRedCards"] = rCards
+		if flags & 1 << 11: features["blocked"] = blocked
 
-		features["mostInThird"] = 1 if intoThird > keyArea and intoThird > penaltyArea else 0
-		features["intoThird"] = intoThird / 100
-		features["keyArea"] = keyArea / 100
-		features["penaltyArea"] = penaltyArea / 100
+		if flags & 1 << 12: features["mostInThird"] = 1 if intoThird > keyArea and intoThird > penaltyArea else 0
+		if flags & 1 << 13: features["intoThird"] = intoThird / 100
+		if flags & 1 << 14: features["keyArea"] = keyArea / 100
+		if flags & 1 << 15: features["penaltyArea"] = penaltyArea / 100
 
-		features["moreFoulsCommit"] = 1 if foulsCommitted > foulsCommittedOpp else 0
-		features["moreFoulsSuff"] = 1 if foulsSuffered > foulsSufferedOpp else 0
+		if flags & 1 << 16: features["moreFoulsCommit"] = 1 if foulsCommitted > foulsCommittedOpp else 0
+		if flags & 1 << 17: features["moreFoulsSuff"] = 1 if foulsSuffered > foulsSufferedOpp else 0
 
-		features["moreYellowCards"] = 1 if yCards > yCardsOpp else 0
-		features["moreRedCards"] = 1 if rCards > rCardsOpp else 0
-		features["moreAttackingThird"] = 1 if intoThird > intoThirdOpp else 0
+		if flags & 1 << 18: features["moreYellowCards"] = 1 if yCards > yCardsOpp else 0
+		if flags & 1 << 19: features["moreRedCards"] = 1 if rCards > rCardsOpp else 0
+		if flags & 1 << 20: features["moreAttackingThird"] = 1 if intoThird > intoThirdOpp else 0
 
 		# -------End features
 
