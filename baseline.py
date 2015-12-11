@@ -18,7 +18,8 @@ def predictMatches(matches, rankings, verbose=False):
 	predictions = []
 	for m in matches:
 		team1, team2 = m.homeTeam, m.visitingTeam
-		match = classes.Match(team1, team2)
+		match = classes.Match(team1)
+		match.setVisitingTeam(team2)
 		ranking1, ranking2 = 100, 100
 		if team1 not in rankings.keys():
 			if (verbose):
@@ -47,10 +48,12 @@ def predictMatches(matches, rankings, verbose=False):
 def main():
 	rankings = getRankings()
 	matches = []
-	lines = [line.rstrip('\n') for line in open('matches_groupStage_2014_15_Champions.txt')]
+	lines = [line.rstrip('\n') for line in open('scores/2014-15_round16Scores.txt')]
 	for line in lines:
-		r = re.sub("[^\w]", " ", line).split()
-		m = classes.Match(r[0], r[3])
+		r = line.split(", ")
+		# print r
+		m = classes.Match(r[0])
+		m.setVisitingTeam(r[3])
 		m.setHomeScore(r[1])
 		m.setVisitorScore(r[2])
 		matches.append(m)
