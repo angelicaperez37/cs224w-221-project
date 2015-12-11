@@ -7,10 +7,11 @@ import scoring
 
 #returns the dict rankings where keys are team names and values are corresponding rankings
 def getRankings():
-	lines = [line.rstrip('\n') for line in open('rankings.txt')]
+	lines = [line.rstrip('\n') for line in open('rankings/2013_14_rankings.txt')]
 	rankings = {}
 	for line in lines:
-		r = re.sub("[^\w]", " ", line).split()
+		r = line.split(", ")
+		# r = re.sub("[^\w]", " ", line).split(", ")
 		rankings[r[1]] = r[0]
 	return rankings
 
