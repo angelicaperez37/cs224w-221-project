@@ -3,8 +3,7 @@ from collections import defaultdict
 import os
 import re
 from snap import *
-
-import collections
+import unicodedata
 
 # stores relevant team data
 class Team():
@@ -243,6 +242,7 @@ class BetweennessFeature():
 		# allGames.append("s-finals")
 
 		self.betweenCentr = defaultdict(lambda: defaultdict(float))
+		self.avgBCPerTeam = defaultdict(float)
 
 		for matchday in allGames:
 			path = folder + matchday + "/networks/"
@@ -283,11 +283,19 @@ class BetweennessFeature():
 
 		# normalize over number of matchdays
 		for teamName in self.betweenCentr:
+			totalBetween = 0
+			totalPlayers = 0
 			for num in self.betweenCentr[teamName]:
 				self.betweenCentr[teamName][num] /= 6
+				totalBetween += self.betweenCentr[teamName][num]
+				totalPlayers += 1
+			self.avgBCPerTeam[teamName] = totalBetween / float(totalPlayers)
 
 	def getBetweenCentr(self, matchID, teamName, player):
 		return self.betweenCentr[teamName][int(player)]
+
+	def getAvgBetweenCentr(self, teamName):
+		return self.avgBCPerTeam[teamName]
 
 # average passes completed and attempted per player feature
 # averaged over all group games
@@ -425,3 +433,85 @@ class CountPassesComplAttempPerTeamFeature():
 	def getPassFail(self, teamName, matchNum):
 		return self.getPCCount(self, teamName, matchNum) - self.getPACount(self, teamName, matchNum)
 
+def strip_accents(text):
+    """
+    Strip accents from input String.
+
+    :param text: The input string.
+    :type text: String.
+
+    :returns: The processed String.
+    :rtype: String.
+    """
+    try:
+        text = unicode(text, 'utf-8')
+    except NameError: # unicode is a default on python 3 
+        pass
+    text = unicodedata.normalize('NFD', text)
+    text = text.encode('ascii', 'ignore')
+    text = text.decode("utf-8")
+    return str(text)
+
+class TeamStatsFeature():
+	def __init__(self):
+		matchdays = ["matchday" + str(i) for i in xrange(1, 7)]
+
+		folder = "team_stats_full_time/2014-15/"
+
+		# map matchday to feature numbers to names
+		features = defaultdict(lambda: defaultdict(str))
+		# matchID -> team -> stats
+		# self.team_stats = defaultdict(lambda: defaultdict(lambda: defaultdict(str)))
+		self.team_stats = defaultdict(lambda: defaultdict(float))
+		for matchday in matchdays:
+			path = folder + matchday + "/"
+			feature_file = open(path + "features", "r")
+			for f in feature_file:
+				if "#" not in f and f != "\n":
+					num, name = f.rstrip().split(", ")
+					features[matchday][num] = name
+
+			for game in os.listdir(path):
+				if re.search("txt", game):
+					matchID = re.sub("_.*", "", game)
+					gameFile = open(path + game, "r")
+					lines = [line.rstrip() for line in gameFile]
+					# second line has team names
+
+					_, _, _, team1, team2, _, _ = lines[1].split(", ")
+					start = lines.index("# total") + 2
+					end = lines.index("# season average") - 2
+
+					team1 = strip_accents(team1)
+					team2 = strip_accents(team2)
+
+					team1Stats = lines[start].split(", ")[1:]
+					team2Stats = lines[start+1].split(", ")[1:]
+					for stat in team1Stats:
+						num, feat = stat.split(":")
+						feat_name = features[matchday][num]
+						if "%" in feat:
+							feat = "0." + feat
+							feat = feat[:-1]
+						if "/" in feat:
+							first_num = float(re.sub("\/.*", "", feat))
+							second_num = float(re.sub(".*\/", "", feat))
+							feat = (first_num + second_num) / 2.0
+						
+						self.team_stats[team1][feat_name] += float(feat) / 6.0
+					for stat in team2Stats:
+						num, feat = stat.split(":")
+						feat_name = features[matchday][num]
+						if "%" in feat:
+							feat = "0." + feat
+							feat = feat[:-1]
+						if "/" in feat:
+							first_num = float(re.sub("\/.*", "", feat))
+							second_num = float(re.sub(".*\/", "", feat))
+							feat = (first_num + second_num) / 2.0
+
+						self.team_stats[team2][feat_name] += float(feat) / 6.0
+
+
+	def getTeamStats(self, team):
+		return self.team_stats[team]

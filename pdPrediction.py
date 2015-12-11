@@ -46,6 +46,8 @@ class PredictPD():
 
 		self.passComplAttempTeamFeature = classes.CountPassesComplAttempPerTeamFeature("group")
 
+		self.teamStatsFeature = classes.TeamStatsFeature()
+
 		# init data structures
 		self.matches = defaultdict(str)
 
@@ -68,6 +70,8 @@ class PredictPD():
 
 		self.teamNamesToMatchID = defaultdict(list)
 		self.matchIDToScore = defaultdict(str)
+
+
 
 	# Average pairwise error over all players in a team
 	# given prediction and gold
@@ -158,28 +162,14 @@ class PredictPD():
 
 	def featureExtractor(self, teamName, p1, p2, matchID, matchNum, weight, score):
 
-		avgPasses = self.countAvgPassesFeature.getCount(teamName, p1, p2)
-
-		# ----
-		# DO NOT UNCOMMENT BELOW
-		# the below average passes calculation will make our average loss GINORMOUS :(
-		# p_key = p1 + "-" + p2
-		# self.totalPassesBetweenPlayers[teamName][p_key] += float(weight)
-		# totalPasses = self.totalPassesBetweenPlayers[teamName][p_key]
-		# avgPasses = totalPasses / (matchNum + 1)
-		# ----
-
-		# isSamePos = self.playerPosFeature.isSamePos(teamName, p1, p2)
-		# isDiffPos = abs(1 - isSamePos)
+		# ------Calculations
+		# avgPasses = self.countAvgPassesFeature.getCount(teamName, p1, p2)
 
 		oppTeam = self.getOppTeam(matchID, teamName)
 		diffInRank = self.rankFeature.isHigherInRank(teamName, oppTeam)
 
 		features = defaultdict(float)
 		# features["avgPasses"] = avgPasses
-		# features["isSamePos"] = isSamePos
-		# features["isDiffPos"] = isDiffPos
-		features["diffInRank"] = diffInRank
 
 		pos1 = self.teamNumToPos[teamName][p1]
 		pos2 = self.teamNumToPos[teamName][p2]
@@ -187,15 +177,6 @@ class PredictPD():
 		# keep a running total of past passes between positions
 		# how about a running average...
 		# p_key = pos1 + "-" + pos2
-		# --- Average passes per position, running average
-		
-		# self.totalPassesBetweenPos[teamName][p_key] += int(weight)
-		# self.totalPasses[teamName] += int(weight)
-		# # print "totalPassesBetweenPos[%s][%s] = %s" % (teamName, p_key, self.totalPassesBetweenPos[teamName][p_key])
-		# # print "totalPasses[%s] = %s" % (teamName, self.totalPasses[teamName])
-		# avgPassesPerPos = self.totalPassesBetweenPos[teamName][p_key] / float(self.totalPasses[teamName])
-
-		# ---
 		
 		# --- Average passes per position, precomputed
 		# avgPassesPerPos = self.countPassesPosFeature.getCount(teamName, p_key)
@@ -203,21 +184,6 @@ class PredictPD():
 
 		# features["avgPassesPerPos"] = avgPassesPerPos
 
-		
-		# --- Running average
-		# avgPassCompl = self.passComplPerTeam[teamName] / (matchNum + 1.0)
-		# avgPassAttem = self.passAttemPerTeam[teamName] / (matchNum + 1.0)
-		# avgPassPerc = self.passPercPerTeam[teamName] / (matchNum + 1.0)
-		# avgPassFail = avgPassCompl - avgPassAttem
-
-		# oppAvgPassCompl = self.passComplPerTeam[oppTeam] / (matchNum + 1.0)
-		# oppAvgPassAttem = self.passAttemPerTeam[oppTeam] / (matchNum + 1.0)
-		# oppAvgPassPerc = self.passPercPerTeam[oppTeam] / (matchNum + 1.0)
-		# oppAvgPassFail = oppAvgPassCompl - oppAvgPassAttem
-
-		# --- 
-
-		# --- Precomputed
 		avgPassCompl = self.passComplAttempTeamFeature.getPCCount(teamName, matchNum)
 		avgPassAttem = self.passComplAttempTeamFeature.getPACount(teamName, matchNum)
 		avgPassPerc = self.passComplAttempTeamFeature.getPCPerc(teamName, matchNum)
@@ -227,10 +193,10 @@ class PredictPD():
 		oppAvgPassAttem = self.passComplAttempTeamFeature.getPACount(oppTeam, matchNum)
 		oppAvgPassPerc = self.passComplAttempTeamFeature.getPCPerc(oppTeam, matchNum)
 		oppAvgPassFail = oppAvgPassCompl - oppAvgPassAttem
-		# ---
-  
+
+
 		# for feature: won against a similar ranking team
-		# 1. define history that we are able to use, i.e. previous games
+		# define history that we are able to use, i.e. previous games
 		matchday = self.getMatchday(matchID)
 		history = self.teamPlayedWith[teamName][:matchday]
 
@@ -238,8 +204,7 @@ class PredictPD():
 			def computeSim(rank1, rank2):
 				return (rank1**2 + rank2**2)**0.5
 
-			# 2. find most similar opponent in terms of rank
-			# TODO: similarity could be defined better?
+			# find most similar opponent in terms of rank
 			oppTeamRank = self.rankFeature.getRank(oppTeam)
 			simTeam = ""
 			simTeamDistance = float('inf')
@@ -250,23 +215,67 @@ class PredictPD():
 				if sim < simTeamDistance:
 					simTeamDistance = sim
 					simTeam = sim
-			# 3. find out whether the game was won or lost
+
+		strip_teamName = self.strip_accents(teamName)
+		strip_oppTeamName = self.strip_accents(oppTeam)
+		teamStats = self.teamStatsFeature.getTeamStats(strip_teamName)
+		# print "teamStats for %s during match %s are"% (teamName, matchID), teamStats
+		onTarget = teamStats["on target"]
+		woodwork = teamStats["woodwork"]
+		blocked = teamStats["blocked"]
+		yCards = teamStats["yellow cards"]
+		rCards = teamStats["red cards"]
+		intoThird = teamStats["into the attacking third"]
+		keyArea = teamStats["into the key area"]
+		penaltyArea = teamStats["into the penalty area"]
+		foulsCommitted = teamStats["fouls committed"]
+		foulsSuffered = teamStats["fouls suffered"]
+
+		oppTeamStats = self.teamStatsFeature.getTeamStats(strip_oppTeamName)
+		onTargetOpp = oppTeamStats["on target"]
+		woodworkOpp = oppTeamStats["woodwork"]
+		blockedOpp = oppTeamStats["blocked"]
+		yCardsOpp = oppTeamStats["yellow cards"]
+		rCardsOpp = oppTeamStats["red cards"]
+		intoThirdOpp = oppTeamStats["into the attacking third"]
+		keyAreaOpp = oppTeamStats["into the key area"]
+		penaltyAreaOpp = oppTeamStats["into the penalty area"]
+		foulsCommittedOpp = oppTeamStats["fouls committed"]
+		foulsSufferedOpp = oppTeamStats["fouls suffered"]
+
+		# -------End calculations
+
+		# -------Features. TODO: Experiment!
+		features["diffInRank"] = diffInRank
+  		features["avgPassPerc"] = avgPassPerc
+		features["higherPassPerc"] = 1 if avgPassPerc > oppAvgPassPerc else 0
+		features["higherPassVol"] = 1 if avgPassCompl > oppAvgPassCompl else 0
+		features["avgBC"] = self.betweenFeature.getAvgBetweenCentr(teamName)
+		features["meanDegree"] = self.meanDegreeFeature.getMeanDegree(matchID, teamName)
+		
+		if len(history) > 0:
 			features["wonAgainstSimTeam"] = self.teamWonAgainst[teamName][matchday]
+		features["onTarget"] = onTarget
+		features["woodwork"] = woodwork
+		features["avgYellowCards"] = yCards
+		features["avgRedCards"] = rCards
+		features["blocked"] = blocked
 
-		# mean degree feature
-		# features["meanDegree"] = self.meanDegreeFeature.getMeanDegree(matchID, teamName)
+		features["mostInThird"] = 1 if intoThird > keyArea and intoThird > penaltyArea else 0
+		features["intoThird"] = intoThird / 100
+		features["keyArea"] = keyArea / 100
+		features["penaltyArea"] = penaltyArea / 100
 
-		# features["betwPerGameP1"] = self.betweenFeature.getBetweenCentr(matchID, teamName, p1)
-		# features["betwPerGameP2"] = self.betweenFeature.getBetweenCentr(matchID, teamName, p2)
+		features["moreFoulsCommit"] = 1 if foulsCommitted > foulsCommittedOpp else 0
+		features["moreFoulsSuff"] = 1 if foulsSuffered > foulsSufferedOpp else 0
 
-		# features["avgPassComplPerP1"] = self.passComplAttempFeature.getPC(teamName, p1)
-		# features["avgPassComplPerP2"] = self.passComplAttempFeature.getPC(teamName, p2)
-		# features["avgPassAttempPerP1"] = self.passComplAttempFeature.getPA(teamName, p1)
-		# features["avgPassAttempPerP2"] = self.passComplAttempFeature.getPA(teamName, p2)
-		# features["avgPCPercPerP1"] = self.passComplAttempFeature.getPCPerc(teamName, p1)
-		# features["avgPCPercPerP2"] = self.passComplAttempFeature.getPCPerc(teamName, p2)
+		features["moreYellowCards"] = 1 if yCards > yCardsOpp else 0
+		features["moreRedCards"] = 1 if rCards > rCardsOpp else 0
+		features["moreAttackingThird"] = 1 if intoThird > intoThirdOpp else 0
 
-		return features
+		# -------End features
+
+		return features	
 
 
 	def strip_accents(self, text):
@@ -342,25 +351,12 @@ class PredictPD():
 			team1 = self.strip_accents(team1)
 			team2 = self.strip_accents(team2)
 
-			print "teamNamesToMatchID[%s] = %s" % (team1 +  "/" + team2, self.teamNamesToMatchID[team1])
 			matchNum = teamsToNumMatches[team1 + "/" + team2]
 			matchID = self.teamNamesToMatchID[team1][matchNum]
 			self.matchIDToScore[matchID] = match
-			# if len(teamNamesToMatchID[team1]) != 0:
-			# 	matchNum = teamsToNumMatches[team1]
-			# 	matchID = teamNamesToMatchID[team1][matchNum]
-			# else: 
-			# 	matchNum = teamsToNumMatches[team2]
-			# 	matchID = teamNamesToMatchID[team2][matchNum]
-
-			print "match num is: ", matchNum
-			
-			print "corresponding matchID: %s" % matchID
-			# figure out which index this is by how many games have been found for them
 
 			self.teamPlayedWith[team1].append(team2)
 			self.teamPlayedWith[team2].append(team1)
-			print "history for %s and %s" % (team1, team2)
 			self.teamWonAgainst[team1].append(team1Won)
 			self.teamWonAgainst[team2].append(abs(1 - team1Won))
 			teamsToNumMatches[team1] += 1
@@ -442,6 +438,7 @@ class PredictPD():
 				# print "%s is matchday %s" % (matchID, matchdayNum)
 				# print "history for %s is" % teamName, self.teamWonAgainst[teamName]
 				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
+				print "team: %s" % teamName
 				# train on each team instead of each pass
 				features = self.featureExtractor(teamName, "", "", matchID, matchNum, 0, didWin)
 				score, loss, pred = self.evaluate(features, didWin)
@@ -535,7 +532,10 @@ class PredictPD():
 				# 	totalCorrect += 1 if int(pred) == int(didWin) else 0
 				# 	totalEx += 1
 				matchNum += 1
-
+		print "\n---Final weights---"
+		for w in self.weights:
+			print "%s = %s" % (w, self.weights[w])
+		print "-------------------"
 		print "Average loss: %f" % (avgLoss / totalEx)
 		print "Total correct: %f" % (totalCorrect / float(totalEx))
 		print "Total average loss: %f" % avgLoss

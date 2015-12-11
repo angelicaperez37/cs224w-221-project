@@ -1,5 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-2, 11/26/2014, Group A - Malmö New Stadium - Malmö, Malmö, Juventus, 0, 2
+2, 11/26/2014, Group A - Malmö New Stadium - Malmö, Malmö FF, Juventus, 0, 2
 
 # goals scored for team1
 # minute, name, penalty, own goal

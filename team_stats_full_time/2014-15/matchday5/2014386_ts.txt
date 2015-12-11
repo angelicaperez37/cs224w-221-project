@@ -1,5 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-2, 11/25/2014, Group H - Arena Lviv - Lviv, FC shakhtar Donetsk, Athletic Club, 0, 1
+2, 11/25/2014, Group H - Arena Lviv - Lviv, FC Shakhtar Donetsk, Athletic Club, 0, 1
 
 # goals scored for team1
 # minute, name, penalty, own goal

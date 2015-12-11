@@ -1,5 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-1, 09/17/2014, Futball Arena Munchen - Munich, FC Bayern Munchen, Manchester, 1, 0
+1, 09/17/2014, Futball Arena Munchen - Munich, FC Bayern Munchen, Manchester City FC, 1, 0
 
 # goals scored for team1
 # minute, name, penalty, own goal
