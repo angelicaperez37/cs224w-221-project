@@ -14,7 +14,7 @@ class LVQ():
 
 		self.weights = defaultdict(int)
 
-		self.stepSize = 0.01
+		self.stepSize = 0.001
 
 
 		self.matchdays = ["matchday" + str(i) for i in xrange(1, 7)]
@@ -77,7 +77,7 @@ class LVQ():
 
 		#init LVQ
 		f = self.featureExtractor("AS Roma", "", "", "2014387", 1, 0, 1)
-		self.numCentroids = 4
+		self.numCentroids = 10
 		self.numFeatures = len(f)
 		self.centroids = defaultdict(lambda: defaultdict(int))
 		self.clusters = defaultdict(list)
@@ -423,7 +423,7 @@ class LVQ():
 	def train(self):
 		# iterate over matchdays, predicting match outcomes, performing SGD
 
-		num_iter = 1
+		num_iter = 20
 		#self.initMatches()
 		#self.initTeamStats()
 		
@@ -490,7 +490,7 @@ class LVQ():
 				print minIdx
 
 				#update centroid weight
-				self.updateWeights(features, centroid, int(didWin))
+				self.updateWeights(features, minCentroid, int(didWin))
 
 				#add team and match to cluster
 				if minIdx not in newClusters:
