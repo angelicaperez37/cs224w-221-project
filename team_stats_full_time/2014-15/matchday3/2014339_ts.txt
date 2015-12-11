@@ -1,5 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-2, 10/22/2014, Group A - Estadio Vicente Calderón - Madrid, Club Atletico de Madrid, Malmo, 5, 0
+2, 10/22/2014, Group A - Estadio Vicente Calderón - Madrid, Club Atletico de Madrid, Malmo FF, 5, 0
 
 # goals scored for team1
 # minute, name, penalty, own goal

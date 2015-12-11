@@ -1,5 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-2, 10/21/2014, Group G - Stamford Bridge - London, Chelsea FC, NKMaribor, 6, 0
+2, 10/21/2014, Group G - Stamford Bridge - London, Chelsea FC, NK Maribor, 6, 0
 
 # goals scored for team1
 # minute, name, penalty, own goal

@@ -1,6 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-2, 10/01/2014, Group D - Arsenal Stadium - London
-, Arsenal FC, Galatasaray AS, 4, 1
+2, 10/01/2014, Group D - Arsenal Stadium - London, Arsenal FC, Galatasaray AS, 4, 1
 
 # goals scored for team1
 # minute, name, penalty, own goal

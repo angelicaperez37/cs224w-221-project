@@ -1,5 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-2, 09/30/2014, Group F - GSP - Nicosia, APOEL, AFC Ajax, 1, 1
+2, 09/30/2014, Group F - GSP - Nicosia, APOEL FC, AFC Ajax, 1, 1
 
 # goals scored for team1
 # minute, name, penalty, own goal

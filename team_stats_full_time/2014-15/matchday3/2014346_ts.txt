@@ -1,5 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-2, 10/22/2014, Group D - Ali Sami Yen Spor Kompleksi - Istanbul, Galatasaray AŞ, Borussia Dortmund, 0, 4
+2, 10/22/2014, Group D - Ali Sami Yen Spor Kompleksi - Istanbul, Galatasaray AS, Borussia Dortmund, 0, 4
 
 # goals scored for team1
 # minute, name, penalty, own goal

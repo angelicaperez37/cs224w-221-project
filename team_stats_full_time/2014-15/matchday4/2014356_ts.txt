@@ -1,5 +1,5 @@
 # matchday, date, place, team1, team2, score1, score2
-2, 11/05/2014, Group E - Fußball Arena München - Munich, FC Bayern München, AS Roma, 2, 0
+2, 11/05/2014, Group E - Fußball Arena München - Munich, FC Bayern Munchen, AS Roma, 2, 0
 
 # goals scored for team1
 # minute, name, penalty, own goal
