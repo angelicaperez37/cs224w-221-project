@@ -109,28 +109,14 @@ class PredictPD():
 		# return (score, loss, pred)
 		return (score, pred)
 
-	def computeMargin(self, features, weights, correctLabel):
-		# amount by which correct score exceeds others
-		correctWeights = self.nameToWeights[label]
-
-		# get the max
-		maxScore = float('-inf')
-		for label in self.nameToWeights:
-			if label != correctLabel:
-				score = computeScore(features, self.nameToWeights[label])
-				if score > maxScore:
-					maxScore = score
-
-		return self.computeScore(features, correctWeights) - maxScore
-
 	# hinge loss
 	def computeLoss(self, features, weights, label):
 		correctWeights = self.nameToWeights[label]
 		maxLoss = float('-inf')
 		for label in self.nameToWeights:
 			if label != correctLabel:
-				loss = self.computeScore(features, correctWeights)
-				loss -= self.computeScore(features, self.nameToWeights[label])
+				loss -= self.computeScore(features, correctWeights)
+				loss += self.computeScore(features, self.nameToWeights[label])
 				loss += 1
 				if loss > maxLoss:
 					maxLoss = loss
