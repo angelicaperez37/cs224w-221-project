@@ -16,7 +16,12 @@ class PredictPD():
 
 	def __init__(self):
 
-		self.weights = defaultdict(int)
+		# self.weights = defaultdict(int)
+		self.loseWeights = defaultdict(int)
+		self.winWeights = defaultdict(int)
+		self.drawWeights = defaultdict(int)
+		self.nameToWeights = {"loss" : self.loseWeights, "win" : self.winWeights,\
+		"draw": self.drawWeights}
 
 		self.stepSize = 0.008
 
@@ -77,17 +82,62 @@ class PredictPD():
 
 
 
-	# Average pairwise error over all players in a team
-	# given prediction and gold
-	def evaluate(self, features, weight):
-		score = self.computeScore(features, self.weights)
-		loss = self.computeLoss(features, self.weights, float(weight))
-		pred = self.predict(score)
-		print "Score: %f, pred: %f, actual: %f" % (score, pred, weight)
-		return (score, loss, pred)
+	# Pick the best score from [win, loss, draw]
+	def evaluate(self, features, outcome):
+		scoreWin = self.computeScore(features, self.winWeights)
+		# lossWin = self.computeLoss(features, self.winWeights, float(weight))
+		# predWin = self.predict(score)
 
+		scoreLoss = self.computeScore(features, self.loseWeights)
+		# lossLoss = self.computeLoss(features, self.loseWeights, float(weight))
+		# predLoss = self.predict(score)
+
+		scoreDraw = self.computeScore(features, self.drawWeights)
+		# lossDraw = self.computeLoss(features, self.drawWeights, float(weight))
+		# predDraw = self.predict(score)
+
+		print "Win score: %f, loss score: %f, draw score: %f" % (scoreWin, scoreLoss, scoreDraw)
+
+		if scoreWin > scoreLoss and scoreWin > scoreDraw:
+			score, pred =  scoreWin,  "win"
+		elif scoreLoss > scoreWin and scoreLoss > scoreDraw:
+			score, pred =  scoreLoss, "loss"
+		else:
+			score, pred =  scoreDraw, "draw"
+
+		print "Score: %f, pred: %s, actual: %s" % (score, pred, outcome)
+		# return (score, loss, pred)
+		return (score, pred)
+
+	def computeMargin(self, features, weights, correctLabel):
+		# amount by which correct score exceeds others
+		correctWeights = self.nameToWeights[label]
+
+		# get the max
+		maxScore = float('-inf')
+		for label in self.nameToWeights:
+			if label != correctLabel:
+				score = computeScore(features, self.nameToWeights[label])
+				if score > maxScore:
+					maxScore = score
+
+		return self.computeScore(features, correctWeights) - maxScore
+
+	# hinge loss
 	def computeLoss(self, features, weights, label):
-		return (self.computeScore(features, weights) - label)**2
+		correctWeights = self.nameToWeights[label]
+		maxLoss = float('-inf')
+		for label in self.nameToWeights:
+			if label != correctLabel:
+				loss = self.computeScore(features, correctWeights)
+				loss -= self.computeScore(features, self.nameToWeights[label])
+				loss += 1
+				if loss > maxLoss:
+					maxLoss = loss
+
+		if maxLoss < 0: maxLoss = 0
+
+		return maxLoss
 
 	# score is dot product of features & weights
 	def computeScore(self, features, weights):
@@ -98,8 +148,25 @@ class PredictPD():
 
 	# returns a vector
 	# 2 * (phi(x) dot w - y) * phi(x)
-	def computeGradientLoss(self, features, weights, label):
-		scalar =  2 * self.computeScore(features, weights) - label
+	def computeGradientLoss(self, features, weights, correctLabel):
+		# compute score of correct
+		alpha = 0.5
+		correctWeights = self.nameToWeights[correctLabel]
+		maxScore = float('-inf')
+		for label in self.nameToWeights:
+			if label != correctLabel:
+				score = self.computeScore(features, self.nameToWeights[label])
+				if score > maxScore:
+					maxScore = score
+
+		correctScore = self.computeScore(features, correctWeights)
+		if correctScore > 1 + maxScore:
+			scalar = 0
+		elif correctScore < 1 + maxScore:
+			scalar = 1
+		else:
+			scalar = alpha
+
 		mult = copy.deepcopy(features)
 		for f in mult:
 			mult[f] = float(mult[f])
@@ -107,10 +174,18 @@ class PredictPD():
 		return mult
 
 	# use SGD to update weights
-	def updateWeights(self, features, weights, label):
+	def updateWeights(self, features, label):
+		weights = self.nameToWeights[label]
 		grad = self.computeGradientLoss(features, weights, label)
-		for w in self.weights:
-			self.weights[w] -= self.stepSize * grad[w]
+		if label == "win":
+			for w in self.winWeights:
+				self.winWeights[w] += self.stepSize * grad[w]
+		elif label == "loss":
+			for w in self.loseWeights:
+				self.loseWeights[w] += self.stepSize * grad[w]
+		else:
+			for w in self.drawWeights:
+				self.drawWeights[w] += self.stepSize * grad[w]
 
 	def getTeamNameFromNetwork(self, network):
 		teamName = re.sub("[^-]*-", "", network, count=1)
@@ -164,29 +239,15 @@ class PredictPD():
 		elif matchID >= 2014427 and matchID <= 2014430:
 			return 8
 
-	def featureExtractor(self, teamName, p1, p2, matchID, matchNum, weight, score):
+	def featureExtractor(self, teamName, matchID, matchNum, weight):
 
 		# ------Calculations
 		# avgPasses = self.countAvgPassesFeature.getCount(teamName, p1, p2)
-
+		matchNum = self.getMatchday(matchID)
 		oppTeam = self.getOppTeam(matchID, teamName)
 		diffInRank = self.rankFeature.isHigherInRank(teamName, oppTeam)
 
 		features = defaultdict(float)
-		# features["avgPasses"] = avgPasses
-
-		pos1 = self.teamNumToPos[teamName][p1]
-		pos2 = self.teamNumToPos[teamName][p2]
-
-		# keep a running total of past passes between positions
-		# how about a running average...
-		# p_key = pos1 + "-" + pos2
-		
-		# --- Average passes per position, precomputed
-		# avgPassesPerPos = self.countPassesPosFeature.getCount(teamName, p_key)
-		# ---
-
-		# features["avgPassesPerPos"] = avgPassesPerPos
 
 		avgPassCompl = self.passComplAttempTeamFeature.getPCCount(teamName, matchNum)
 		avgPassAttem = self.passComplAttempTeamFeature.getPACount(teamName, matchNum)
@@ -342,12 +403,8 @@ class PredictPD():
 						team1 = self.strip_accents(team1)
 						team2 = self.strip_accents(team2)
 
-						print "stripped team1: %s, team2: %s" % (team1, team2)
 						self.teamNamesToMatchID[team1].append(matchID)
 						self.teamNamesToMatchID[team2].append(matchID)
-						# print teamNamesToMatchID[self.matches[matchID]]
-						print "teamNamesToMatchID[%s] = %s" % (team1, self.teamNamesToMatchID[team1])
-						print "teamNamesToMatchID[%s] = %s" % (team2, self.teamNamesToMatchID[team2])
 
 
 		allScoresFilename = "scores/2014-15_allScores.txt"
@@ -357,7 +414,6 @@ class PredictPD():
 		# for every team, store opponents in order by matchday
 		teamsToNumMatches = defaultdict(int)
 		for match in self.allMatchesWithScores:
-			print "match was ", match
 			team1, score1, score2, team2 = match.split(", ")
 			team1Won = 0
 			if score1 > score2:
@@ -378,12 +434,9 @@ class PredictPD():
 			teamsToNumMatches[team2] += 1
 
 	def predict(self, score):
-		if score >= 0:
+		if score >= 0.5:
 			return 1
 		else: return 0
-		# if score >= 0.5:
-		# 	return 1
-		# else: return 0
 
 	def initTeamStats(self):
 		for matchday in self.matchdays:
@@ -401,13 +454,24 @@ class PredictPD():
 					
 					self.teamStatsByMatch[teamName][matchID] = stats
 
+	def printWeights(self):
+		print "----Win weights----"
+		for w in self.winWeights:
+			print "weights[%s] = %f" % (w, float(self.winWeights[w]))
+		print "----Lose weights----"
+		for w in self.loseWeights:
+			print "weights[%s] = %f" % (w, float(self.loseWeights[w]))
+		print "----Draw weights----"
+		for w in self.drawWeights:
+			print "weights[%s] = %f" % (w, float(self.drawWeights[w]))
+
 	# Training
 	# 	have features calculate numbers based on data
-	# 	learn weights for features via supervised data (group stage games) and SGD/EM
+	# 	learn weights for features via supervised data (group stage games) and SGD
 	def train(self):
 		# iterate over matchdays, predicting match outcomes, performing SGD
 
-		num_iter = 2
+		num_iter = 10
 		self.initMatches()
 		self.initTeamStats()
 		
@@ -418,146 +482,117 @@ class PredictPD():
 			totalCorrect = 0
 			totalEx = 0
 			avgLoss = 0
+
+			totalWin = 0
+			totalLoss = 0
+			totalDraw = 0
+
+			correctWin = 0
+			correctLoss = 0
+			correctDraw = 0
+
 			print "Iteration %s" % i
 			print "------------"
-			for w in self.weights:
-				print "weights[%s] = %f" % (w, float(self.weights[w]))
-			# iterate over matchdays -- hold out on some matchdays
+			self.printWeights()
+
+			groupGamesFilename = "data-groupGames"
+			groupGames = open(groupGamesFilename, "r")
 			matchNum = 0
+			for match in groupGames:
+				print "match is: %s" % match.rstrip()
+				matchID, team, outcome = match.rstrip().split(", ")
 
-			# # try shuffling matchdays
-			# random.shuffle(self.matchdays)
+				features = self.featureExtractor(team, matchID, matchNum, 0)
+				score, pred = self.evaluate(features, outcome)
 
-			allGames = []
+				self.updateWeights(features, outcome)
+				totalCorrect += 1 if pred == outcome else 0
+				if outcome == "draw":
+					totalDraw += 1
+					if pred == outcome:
+						correctDraw += 1
+				elif outcome == "win":
+					totalWin += 1
+					if pred == outcome:
+						correctWin += 1
+				else:
+					totalLoss += 1
+					if pred == outcome:
+						correctLoss += 1
 
-			for matchday in self.matchdays:
-				print "On " + matchday
-				path = self.folder + matchday + "/networks/"
-				# iterate over games
-				for network in os.listdir(path):
-					if re.search("-edges", network):
-						# passesBetweenPos = defaultdict(lambda: defaultdict(int))
-						allGames.append((path, network))
-
-			# try shuffling games
-			# random.shuffle(allGames)
-
-			for game in allGames:
-				path, network = game
-				edgeFile = open(path + network, "r")
-
-				teamName = self.getTeamNameFromNetwork(network)
-				matchID = self.getMatchIDFromFile(network)
-				# print "team: %s" % teamName
-				matchdayNum = self.getMatchday(matchID)
-				str_teamName = self.strip_accents(teamName)
-				# score = self.matchIDToScore[matchID]
-				
-				# print "%s is matchday %s" % (matchID, matchdayNum)
-				# print "history for %s is" % teamName, self.teamWonAgainst[teamName]
-				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
-				print "team: %s" % teamName
-				# train on each team instead of each pass
-				features = self.featureExtractor(teamName, "", "", matchID, matchNum, 0, didWin)
-				score, loss, pred = self.evaluate(features, didWin)
-
-				self.updateWeights(features, self.weights, int(didWin))
-				totalCorrect += 1 if int(pred) == int(didWin) else 0
-				avgLoss += loss
 				totalEx += 1
-				# for players in edgeFile:
-				# 	p1, p2, weight = players.rstrip().split("\t")
-
-				# 	features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight, didWin)
-
-				# 	# for f in features:
-				# 	# 	print "features[%s] = %f" % (f, float(features[f]))
-				# 	# for w in self.weights:
-				# 	# 	print "weights[%s] = %f" % (w, float(self.weights[w]))
-
-				# 	score, loss, pred = self.evaluate(features, didWin)
- 			# 		self.updateWeights(features, self.weights, int(didWin))
- 			# 		totalCorrect += 1 if int(pred) == int(didWin) else 0
- 			# 		avgLoss += loss
-				# 	totalEx += 1
 				matchNum += 1
 			print "Total correct: %f" % (totalCorrect / float(totalEx))
+			print "Total correct wins: %f" % (correctWin)
+			print "Total wins: %f" % (totalWin)
+			print "Total correct losses: %f" % (correctLoss)
+			print "Total losses: %f" % (totalLoss)
+			print "Total correct draws: %f" % (correctDraw)
+			print "Total draws: %f" % (totalDraw)
 			print "Average loss: %f" % (avgLoss / totalEx)
 
+		self.printWeights()
+
 	# Testing
-	#	Predict, then compare with dev/test set (r-16 games)
 	def test(self):
-		# sum up average error
 
 		print "Testing"
 		print "-------"
-		avgLoss = 0
-		totalEx = 0
+
 		matchNum = 0
 
-		# uncomment below if testing on round of 16
-		matchday = "r-16"
-
-		# uncomment below if testing on quarter finals
-		# matchday = "q-finals"
-
-		# uncommend below if testing on semi-finals
-		# matchday = "s-finals"
-		print "On " + matchday
-		path = self.folder + matchday + "/networks/"
 		# iterate over games
+
 		totalCorrect = 0
-		for network in os.listdir(path):
+		totalEx = 0
 
-			if re.search("-edges", network):
-				edgeFile = open(path + network, "r")
+		totalWin = 0
+		totalLoss = 0
+		totalDraw = 0
 
-				# predEdgeFile = open("predicted/pred-" + network, "w+")
+		correctWin = 0
+		correctLoss = 0
+		correctDraw = 0
 
-				teamName = self.getTeamNameFromNetwork(network)
-				matchID = self.getMatchIDFromFile(network)
-				matchdayNum = self.getMatchday(matchID)
-				str_teamName = self.strip_accents(teamName)
-				
-				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
-				print "team: %s" % teamName
+		r16Filename = "data-r16Games"
+		r16Games = open(r16Filename, "r")
+		matchNum = 0
+		for match in r16Games:
+			print "match is: %s" % match.rstrip()
+			matchID, team, outcome = match.rstrip().split(", ")
 
-				didWin = self.teamWonAgainst[str_teamName][matchdayNum]
-				# train on each team instead of each pass
-				features = self.featureExtractor(teamName, "", "", matchID, matchNum, 0, didWin)
-				score, loss, pred = self.evaluate(features, didWin)
-				self.updateWeights(features, self.weights, int(didWin))
-				totalCorrect += 1 if int(pred) == int(didWin) else 0
-				avgLoss += loss
-				totalEx += 1
-				# for players in edgeFile:
-				# 	p1, p2, weight = players.rstrip().split("\t")
-				# 	print "p1: %s, p2: %s, weight: %f" % (p1, p2, float(weight))
+			features = self.featureExtractor(team, matchID, matchNum, 0)
+			score, pred = self.evaluate(features, outcome)
 
-				# 	features = self.featureExtractor(teamName, p1, p2, matchID, matchNum, weight, didWin)
+			self.updateWeights(features, outcome)
+			totalCorrect += 1 if pred == outcome else 0
+			if outcome == "draw":
+				totalDraw += 1
+				if pred == "draw":
+					correctDraw += 1
+			elif outcome == "win":
+				totalWin += 1
+				if pred == "win":
+					correctWin += 1
+			else:
+				totalLoss += 1
+				if pred == "loss":
+					correctLoss += 1
+			
+			totalEx += 1
+			matchNum += 1
 
-				# 	for f in features:
-				# 		print "features[%s] = %f" % (f, float(features[f]))
-				# 	for w in self.weights:
-				# 		print "weights[%s] = %f" % (w, float(self.weights[w]))
-
-				# 	score, loss, pred = self.evaluate(features, didWin)
-
-				# 	# print out predicted so can visually compare to actual
-				# 	# predEdgeFile.write(p1 + "\t" + p2 + "\t" + str(score) + "\n")
-
-				# 	avgLoss += loss
-				# 	totalCorrect += 1 if int(pred) == int(didWin) else 0
-				# 	totalEx += 1
-				matchNum += 1
 		print "\n---Final weights---"
-		for w in self.weights:
-			print "%s = %s" % (w, self.weights[w])
+		self.printWeights()
 		print "-------------------"
-		print "Average loss: %f" % (avgLoss / totalEx)
 		print "Total correct: %f" % (totalCorrect / float(totalEx))
-		print "Total average loss: %f" % avgLoss
-		print "Total examples (passes): %f" % totalEx
+		print "Total correct wins: %f" % (correctWin)
+		print "Total wins: %f" % (totalWin)
+		print "Total correct losses: %f" % (correctLoss)
+		print "Total losses: %f" % (totalLoss)
+		print "Total correct draws: %f" % (correctDraw)
+		print "Total draws: %f" % (totalDraw)
+		print "Total examples (games): %f" % totalEx
 
 predsys = PredictPD()
 predsys.train()
