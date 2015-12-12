@@ -1,0 +1,28 @@
+#! /bin/bash
+NUM_FEATURES=21
+
+readarray -t features < try_features_multi.out
+for (( i=${#features[@]} - 1; i >= 0; --i )); do
+    flags="${features[i]},$flags"
+    loss=`python pdPrediction-multi.py [$flags] | tail -n 2 | head -n 1 | awk 'NF>1{print $NF}'`
+    echo -e "$loss\t$flags"
+done
+exit
+
+features=`bc <<< "2^$NUM_FEATURES - 1"`
+while [ $features -gt 0 ]; do
+    worst_feature=-1
+    min_loss=$MAX_INT  # `python pdPrediction-multi.py $features | tail -n 2 | head -n 1 | awk 'NF>1{print $NF}'`
+    for i in `seq 0 20`; do
+        if [ $(($features & 1 << $i)) -eq 0 ]; then
+            continue
+        fi
+        loss=`python pdPrediction-multi.py $(($features & ~(1 << $i))) | tail -n 2 | head -n 1 | awk 'NF>1{print $NF}'`
+        if [ `bc <<< "$loss < $min_loss"` -eq 1 ]; then
+            min_loss=$loss
+            worst_feature=$i
+        fi
+    done
+    echo $worst_feature
+    let "features &= ~(1 << $worst_feature)"
+done
